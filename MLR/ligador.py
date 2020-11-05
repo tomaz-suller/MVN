@@ -49,7 +49,7 @@ for file in files:
 				bitmap[base//2]=True
 				for nline in file[:-1]:
 					if len(nline)==5 and nline[3]=="'>" and nline[0][1:]==line[0][1:]: nline[0]=nline[0][0]+hex(base)[2:].zfill(3)
-					if len(nline)==2 and nline[0][0]!="d" and nline[1][1:]==line[0][1:]: nline[1]=nline[1][0]+hex(base)[2:].zfill(3)
+					if len(nline)==2 and nline[0][0]!="d" and nline[0]!=line[0] and nline[1][1:]==line[0][1:]: nline[1]=nline[1][0]+hex(base)[2:].zfill(3)
 				line[0]=line[0][0]+hex(base)[2:].zfill(3)
 				base+=2
 			else:
@@ -90,6 +90,7 @@ for file in files:
 			line-=1
 		line+=1
 
+#Write to the output file
 output=open(nome, "w")
 for file in files:
 	for line in file[:-1]:
