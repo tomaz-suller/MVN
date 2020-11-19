@@ -1,4 +1,5 @@
 import sys
+from switchcase import *
 
 def load(name):
 	raw=open(name, "r")
@@ -31,10 +32,12 @@ for line in file:
 #Relocate the entire code
 for line in file:
 	if len(line)==2:
-		if line[0][0]=="a": line[1]=line[1][0]+hex(int(line[1][1:],16)+base)[2:].zfill(3)
-		addr=int(line[0][1:],16)
-		if addr+base>0x0fff:raise ValueError("Base incompatível com código")
-		line[0]=hex(addr+base)[2:].zfill(4)
+		switch(line[0][0])
+		if case("a") or case("2"): line[1]=line[1][0]+hex(int(line[1][1:],16)+base)[2:].zfill(3)
+		if case("8"):
+			addr=int(line[0][1:],16)
+			if addr+base>0x0fff:raise ValueError("Base incompatível com código")
+			line[0]=hex(addr+base)[2:].zfill(4)
 
 #Write to the output file
 output=open(nome, "w")

@@ -68,7 +68,12 @@ send them to the MVN memory'''
 def load(name, mvn):
 	valid_file(name)
 	file=open(name, "r")
-	code=file.read().split("\n")
+	raw=file.read()
+	code=""
+	for l in raw:
+		if l=="\t":code+=" "
+		else:code+=l
+	code=code.split("\n")
 	line=0
 	while line < len(code):
 		try:
@@ -90,6 +95,7 @@ def load(name, mvn):
 is define the values of the booleans vals and sbs and then run until
 goon turns false'''
 def run(mvn, goon, vals, sbs):
+	n_steps=0
 	if vals:
 		s="s"
 	else:
@@ -118,11 +124,15 @@ def run(mvn, goon, vals, sbs):
 		
 	while goon:
 		goon=mvn.step()
+		n_steps+=1
 		if vals:
 			if sbs:
 				read=input(mvn.print_state())
 			else:
 				print(mvn.print_state())
+		if n_steps>max_step:
+			print("Limite de passos atingido, verifique se não há loops infinitos.")
+			goon=False
 
 '''Run the code in debugger mode, in this mode vals and sbs are not
 needed. The debugger mode has it's own instruction set, to execute 
@@ -200,6 +210,35 @@ def run_dbg(mvn, goon):
 Here starts the main code for the MVN's user interface, this will 
 look like a cmd to the user, but operating the MVN class
 """
+
+#Define steps limit
+max_step=10000
+if os.path.exists("./mvn.config"):
+	conf=open("./mvn.config", "r")
+	data=conf.read()
+	data=data.split("\n")
+	line=0
+	while line<len(data):
+		data[line]=clean(data[line])
+		if len(data[line])==0:
+			data.pop(line)
+			line-=1
+		line+=1
+	else:
+		for line in data:
+			text=""
+			for word in line:
+				text+=word
+			if "=" in word:
+				switch(word[:word.index("=")])
+				if case("max_step"):
+					try:
+						max_step=int(word[word.index("=")+1:])
+					except:
+						print("O valor de max_step deve ser inteiro, usando valor padrão.")
+				else:
+					print("Parâmetro desconhecido, usando valor padrão.")
+	conf.close()
 
 #First thing to be done is inicialize our MVN
 mvn=inicialize()
