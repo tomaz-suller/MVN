@@ -34,13 +34,15 @@ class memory:
 		self.map[addr].set_value(value//0x100)
 		self.map[addr+1].set_value(value-(value//0x100)*0x100)
 
-	def show(self, start, stop):
+	def show(self, start, stop, arq):
 		valid_value(start, MIN_ADDR, MAX_ADDR)
 		valid_value(stop, MIN_ADDR, MAX_ADDR)
 		if start>stop:
-			raise ValueError("Uncompatible values")
-		print("       00  01  02  03  04  05  06  07  08  09  0A  0B  0C  0D  0E  0F  ")
-		print("-----------------------------------------------------------------------")
+			raise MVNError("Uncompatible values")
+		if arq!=None: file=open(arq, "w")
+		else:
+			print("       00  01  02  03  04  05  06  07  08  09  0A  0B  0C  0D  0E  0F  ")
+			print("-----------------------------------------------------------------------")
 		line=hex(start//0x0010)[2:].zfill(3)+"0:  "+"    "*(start%0x0010)
 		current_line=start//0x0010
 		current_index=start-current_line*0x0010
@@ -50,17 +52,20 @@ class memory:
 			while current_index<=final_index:
 				line+=hex(self.map[current_line*0x0010+current_index].get_value())[2:].zfill(2)+"  "
 				current_index+=1
-			print(line)
+			if arq!=None: file.write(line+"\n")
+			else:print(line)
 		else:
 			while current_line<final_line:
 				while current_index<=0xF:
 					line+=hex(self.map[current_line*0x0010+current_index].get_value())[2:].zfill(2)+"  "
 					current_index+=1
-				print(line)
+				if arq!=None: file.write(line+"\n")
+				else:print(line)
 				current_line+=1
 				current_index=0
 				line=hex(current_line)[2:].zfill(3)+"0:  "
 			while current_index<=final_index:
 				line+=hex(self.map[current_line*0x0010+current_index].get_value())[2:].zfill(2)+"  "
 				current_index+=1
-			print(line)
+			if arq!=None: file.write(line+"\nFinal do dump.")
+			else:print(line)

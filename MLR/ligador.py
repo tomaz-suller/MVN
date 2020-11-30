@@ -34,30 +34,16 @@ soma=0
 for file in files:soma+=file[-1]
 if soma>0xfff//2: raise ValueError("Os códigos não cabem na memória.")
 
-#Create bitmap to analyse compatibility and relocate
-bitmap=[False]*(0xfff//2)
+#Relocate each code using last addr of previous code as base
+base=0
 for file in files:
-	size=file[-1]
-	base=0
-	while base+2*size<=0xfff and sum(bitmap[base//2:base//2+size])>0:
-		base+=2
-	if base+2*size>0xfff:
-		raise ValueError("Não pode ser ligado, os arquivos se sobrepoem.")
 	for line in file[:-1]:
-		if len(line)==2:
-			if int(line[0][0], 16)>=8:
-				bitmap[base//2]=True
-				for nline in file[:-1]:
-					if len(nline)==5 and nline[3]=="'>" and nline[0][1:]==line[0][1:]: nline[0]=nline[0][0]+hex(base)[2:].zfill(3)
-					if len(nline)==2 and nline[0][0]!="d" and nline[0]!=line[0] and nline[1][1:]==line[0][1:]: nline[1]=nline[1][0]+hex(base)[2:].zfill(3)
-				line[0]=line[0][0]+hex(base)[2:].zfill(3)
-				base+=2
-			else:
-				addr=int(line[0][1:], 16)
-				if bitmap[addr//2]==True:
-					raise ValueError("Não pode ser ligado, os arquivos se sobrepoem.")
-				bitmap[addr//2]=True
-				if addr==base: base+=2
+		if len(line)==2 and int(line[0][0],16)>=8:
+			for nline in file[:-1]:
+				if len(nline)==2 and nline[1][1:]==line[0][1:] and nline[0][0] in ["2", "a"] and nline[1][0] in ["0", "1", "2", "4", "5", "6", "7", "8", "9", "a", "b"]: nline[1]=nline[1][0]+hex(int(line[0][1:],16)+base)[2:].zfill(3)
+				if len(nline)==5 and nline[3]=="'>" and nline[0][1:]==line[0][1:]: nline[0]=nline[0][0]+hex(int(line[0][1:],16)+base)[2:].zfill(3)
+			line[0]=line[0][0]+hex(int(line[0][1:],16)+base)[2:].zfill(3)
+	base=int(file[-2][0][1:],16)+2
 
 #Generate entry points dictionary
 entry_points={}

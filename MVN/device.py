@@ -68,7 +68,7 @@ class device:
 	returned is one byte (or two nibbles)'''
 	def get_data(self):
 		if not self.is_readable():
-			raise ValueError("Unreadable device")
+			raise MVNError("Unreadable device")
 		switch(self.dtype)
 		if case(0):
 			if len(self.buffer)<2:
@@ -89,7 +89,7 @@ class device:
 	byte (or two nibbles)'''
 	def put_data(self, value):
 		if not self.is_writable():
-			raise ValueError("Unwritable device")
+			raise MVNError("Unwritable device")
 		valid_value(value, MIN_VALUE, MAX_VALUE)
 		switch(self.dtype)
 		if case(1):
@@ -101,8 +101,8 @@ class device:
 			subprocess.run("lpr -P "+self.printer+" will_print.txt")
 			subprocess.run("rm will_print.txt")
 		elif case(3):
-			self.file_write.write(bytes(chr(value//0x0100), "UTF-8"))
-			self.file_write.write(bytes(chr(value%0x0100), "UTF-8"))
+			self.file_write.write((value//0x0100).to_bytes(1,byteorder="big"))
+			self.file_write.write((value%0x0100).to_bytes(1,byteorder="big"))
 
 	#Ends up the device
 	def terminate(self):

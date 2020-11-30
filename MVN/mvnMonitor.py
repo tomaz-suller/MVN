@@ -374,17 +374,26 @@ while True:
 
 		#Display the memmory of the MVN given the start and end addresses
 		elif case("m"):
-			if len(command)!=3:
-				try:
-					start=int(input("Informe o endereco inicial: "), 16)
-					stop=int(input("Informe o endereco final: "), 16)
-					mvn.dump_memory(start, stop)
-				except:
-					print("Enderecos não são valores hexadecimais.")
-			else:
+			if len(command)==3:
 				try:
 					start=int(command[1], 16)
 					stop=int(command[2], 16)
+					mvn.dump_memory(start, stop)
+				except:
+					print("Enderecos não são valores hexadecimais.")
+			elif len(command)==4:
+				try:
+					start=int(command[1], 16)
+					stop=int(command[2], 16)
+					mvn.dump_memory(start, stop, command[3])
+				except:
+					print("Enderecos não são valores hexadecimais.")
+			elif len(command)>4:
+				print("Mais valores passados que parâmetros.")
+			else:
+				try:
+					start=int(input("Informe o endereco inicial: "), 16)
+					stop=int(input("Informe o endereco final: "), 16)
 					mvn.dump_memory(start, stop)
 				except:
 					print("Enderecos não são valores hexadecimais.")

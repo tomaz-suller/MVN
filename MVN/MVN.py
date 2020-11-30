@@ -28,6 +28,7 @@ class MVN:
 		self.OI=register.register()
 		self.AC=register.register()
 		self.SP=0x0ffe
+		self.end=True
 		self.ula=ULA.ULA()
 		self.devs=[]
 		self.devs.append(device.device(0,0))
@@ -122,6 +123,8 @@ class MVN:
 		self.MAR.set_value(self.OI.get_value())
 		self.get_mem()
 		self.AC.set_value(self.MDR.get_value())
+		self.MAR.set_value(self.IC.get_value())
+		self.MDR.set_value(self.IR.get_value())
 		self.IC.set_value(self.IC.get_value()+2)
 		return True
 
@@ -133,6 +136,8 @@ class MVN:
 		self.MAR.set_value(self.OI.get_value())
 		self.MDR.set_value(self.AC.get_value())
 		self.set_mem()
+		self.MAR.set_value(self.IC.get_value())
+		self.MDR.set_value(self.IR.get_value())
 		self.IC.set_value(self.IC.get_value()+2)
 		return True
 
@@ -144,6 +149,8 @@ class MVN:
 		self.MAR.set_value(self.OI.get_value())
 		self.MDR.set_value(self.IC.get_value()+2)
 		self.set_mem()
+		self.MAR.set_value(self.IC.get_value())
+		self.MDR.set_value(self.IR.get_value())
 		self.IC.set_value(self.OI.get_value()+2)
 		return True
 
@@ -153,21 +160,27 @@ class MVN:
 	def rs(self):
 		self.MAR.set_value(self.OI.get_value())
 		self.get_mem()
+		self.MAR.set_value(self.IC.get_value())
 		self.IC.set_value(self.MDR.get_value())
+		self.MDR.set_value(self.IR.get_value())
 		return True
 
 	#Only returns False, end of the program
 	def hm(self):
-		return False
+		if self.end:return False
+		self.end=True
+		self.IC.set_value(self.ret)
+		return True
 
 	'''AC:=dev
 	IC:=IC+1'''
 	def gd(self):
+		nfound=True
 		for dev in self.devs:
 			if self.OI.get_value()//0x0100==dev.get_type() and self.OI.get_value()%0x0100==dev.get_UC():
 				self.AC.set_value(dev.get_data())
-			else:
-				raise ValueError("Dispositivo não existe")
+				nfound=False
+		if nfound: raise MVNError("Dispositivo não existe")
 		self.IC.set_value(self.IC.get_value()+2)
 		return True	
 
@@ -180,88 +193,99 @@ class MVN:
 				dev.put_data(self.AC.get_value())
 				err+=1
 		if err==len(self.devs):
-			raise ValueError("Dispositivo não existe")
+			raise MVNError("Dispositivo não existe")
 		self.IC.set_value(self.IC.get_value()+2)
 		return True
 
 	'''Send OI to the supervisor
 	IC:=IC+1'''
 	def os(self):
-		switch(self.AC.get_value())
-		if case(0):
-			if self.OP.get_value()!=0: self.os_error(0,self.OP.get_value())
-			print("OK")
-		elif case(1):
-			if self.OP.get_value()!=0: self.os_error(0,self.OP.get_value())
-			print("ER:JOB")
-		elif case(2):
-			if self.OP.get_value()!=0: self.os_error(0,self.OP.get_value())
-			print("ER:CMD")
-		elif case(3):
-			if self.OP.get_value()!=0: self.os_error(0,self.OP.get_value())
-			print("ER:ARG")
-		elif case(4):
-			if self.OP.get_value()!=0: self.os_error(0,self.OP.get_value())
-			print("ER:END")
-		elif case(5):
-			if self.OP.get_value()!=0: self.os_error(0,self.OP.get_value())
-			print("ER:EXE")
-		elif case(0x10):
-			#Get pointer
-			if self.OP.get_value()!=1: self.os_error(1,self.OP.get_value())
-			self.MAR.set_value(self.SP)
-			self.get_mem()
-			self.AC.set_value(self.MDR.get_value())
-		elif case(0x11):
-			#Set pointer
-			if self.OP.get_value()!=1: self.os_error(1,self.OP.get_value())
-			self.MAR.set_value(self.MAR.get_value()-2)
-			self.get_mem()
-			self.MAR.set_value(self.SP)
-			self.set_mem()
-		elif case(0x12):
-			#Get stacktop
-			if self.OP.get_value()!=1: self.os_error(1,self.OP.get_value())
-			self.MAR.set_value(self.SP)
-			self.get_mem()
-			self.MAR.set_value(self.MDR.get_value())
-			self.get_mem()
-			self.AC.set_value(self.MDR.get_value())
-		elif case(0x13):
-			#Set stacktop
-			if self.OP.get_value()!=1: self.os_error(1,self.OP.get_value())
-			self.MAR.set_value(self.SP)
-			self.get_mem()
-			self.AC.set_value(self.MDR.get_value())
-			self.MAR.set_value(self.MAR.get_value()-2)
-			self.get_mem()
-			self.MAR.set_value(self.AC.get_value())
-			self.set_mem()
-		elif case(2319):
-			if self.OP.get_value()!=0: self.os_error(0,self.OP.get_value())
-			print("2319! Temos um 2319!")
-		elif case(404):
-			if self.OP.get_value()!=0: self.os_error(0,self.OP.get_value())
-			print("404! Erro não encontrado.")
-		elif case(66):
-			if self.OP.get_value()!=0: self.os_error(0,self.OP.get_value())
-			print("Execute o erro 66!")
-		elif case(88):
-			if self.OP.get_value()!=0: self.os_error(0,self.OP.get_value())
-			print("Cuidado amigo!!! Indo rápido desse jeito você pode acabar viajando no tempo")
-		elif case(42):
-			if self.OP.get_value()!=0: self.os_error(0,self.OP.get_value())
-			print("Também fiquei triste com a resposta do Pensador Profundo. Tomara que a Terra já esteja terminando seu trabalho.")
-		elif case(2001):
-			if self.OP.get_value()!=0: self.os_error(0,self.OP.get_value())
-			print("Desculpe Dave, estou com medo e não posso fazer isso.")
+		if self.OI.get_value()%0x100==0xEE:
+			switch(self.AC.get_value())
+			if case(0):
+				if self.OI.get_value()//0x100!=0: self.os_error(0,self.OI.get_value()//0x100)
+				print("OK")
+			elif case(1):
+				if self.OI.get_value()//0x100!=0: self.os_error(0,self.OI.get_value()//0x100)
+				print("ER:JOB")
+			elif case(2):
+				if self.OI.get_value()//0x100!=0: self.os_error(0,self.OI.get_value()//0x100)
+				print("ER:CMD")
+			elif case(3):
+				if self.OI.get_value()//0x100!=0: self.os_error(0,self.OI.get_value()//0x100)
+				print("ER:ARG")
+			elif case(4):
+				if self.OI.get_value()//0x100!=0: self.os_error(0,self.OI.get_value()//0x100)
+				print("ER:END")
+			elif case(5):
+				if self.OI.get_value()//0x100!=0: self.os_error(0,self.OI.get_value()//0x100)
+				print("ER:EXE")
+			elif case(2319):
+				if self.OI.get_value()//0x100!=0: self.os_error(0,self.OI.get_value()//0x100)
+				print("2319! Temos um 2319!")
+			elif case(404):
+				if self.OI.get_value()//0x100!=0: self.os_error(0,self.OI.get_value()//0x100)
+				print("404! Erro não encontrado.")
+			elif case(66):
+				if self.OI.get_value()//0x100!=0: self.os_error(0,self.OI.get_value()//0x100)
+				print("Execute o erro 66!")
+			elif case(88):
+				if self.OI.get_value()//0x100!=0: self.os_error(0,self.OI.get_value()//0x100)
+				print("Cuidado amigo!!! Indo rápido desse jeito você pode acabar viajando no tempo")
+			elif case(42):
+				if self.OI.get_value()//0x100!=0: self.os_error(0,self.OI.get_value()//0x100)
+				print("Também fiquei triste com a resposta do Pensador Profundo. Tomara que a Terra já esteja terminando seu trabalho.")
+			elif case(2001):
+				if self.OI.get_value()!=0: self.os_error(0,self.OI.get_value()//0x100)
+				print("Desculpe Dave, estou com medo e não posso fazer isso.")
+			else:
+				print("Erro desconhecido. Código "+str(self.OI.get_value()//0x100))
+		elif self.OI.get_value()%0x100==0xEF:
+			self.ret=self.IC.get_value()+2
+			self.IC.set_value(self.AC.get_value()-2)
+			self.end=False
+		elif self.OI.get_value()%0x100==0x57:
+			switch(self.AC.get_value())
+			if case(0):
+				#Get pointer
+				if self.OI.get_value()//0x100!=0: self.os_error(0,self.OI.get_value()//0x100)
+				self.MAR.set_value(self.SP)
+				self.get_mem()
+				self.AC.set_value(self.MDR.get_value())
+			elif case(1):
+				#Set pointer
+				if self.OI.get_value()//0x100!=1: self.os_error(1,self.OI.get_value()//0x100)
+				self.MAR.set_value(self.MAR.get_value()-2)
+				self.get_mem()
+				self.MAR.set_value(self.SP)
+				self.set_mem()
+			elif case(2):
+				#Get stacktop
+				if self.OI.get_value()//0x100!=0: self.os_error(0,self.OI.get_value()//0x100)
+				self.MAR.set_value(self.SP)
+				self.get_mem()
+				self.MAR.set_value(self.MDR.get_value())
+				self.get_mem()
+				self.AC.set_value(self.MDR.get_value())
+			elif case(3):
+				#Set stacktop
+				if self.OI.get_value()//0x100!=1: self.os_error(1,self.OI.get_value()//0x100)
+				self.MAR.set_value(self.SP)
+				self.get_mem()
+				self.AC.set_value(self.MDR.get_value())
+				self.MAR.set_value(self.MAR.get_value()-2)
+				self.get_mem()
+				self.MAR.set_value(self.AC.get_value())
+				self.set_mem()		
+			else:
+				print("Instrução desconhecida. Código "+str(self.OI.get_value()//0x100))
 		else:
-			print("Erro desconhecido. Código "+str(self.OI.get_value))
+			print("Operação desconhecida. Código "+str(self.OI.get_value()%0x100))
 		self.IC.set_value(self.IC.get_value()+2)
 		return True
 
 	def os_error(self, expected, passed):
-		raise ValueError(str(expected)+" arguments expecteds, "+str(passed)+" passed.")
+		raise MVNError(str(expected)+" arguments expecteds, "+str(passed)+" passed.")
 
 	def print_state(self):
 		return hex(self.MAR.get_value())[2:].zfill(4)+" "+hex(self.MDR.get_value())[2:].zfill(4)+" "+hex(self.IC.get_value())[2:].zfill(4)+" "+hex(self.IR.get_value())[2:].zfill(4)+" "+hex(self.OP.get_value())[2:].zfill(4)+" "+hex(self.OI.get_value())[2:].zfill(4)+" "+hex(self.AC.get_value())[2:].zfill(4)
@@ -271,8 +295,8 @@ class MVN:
 	def set_memory(self, guide):
 		for data in guide:
 			self.mem.set_value(int(data[0], 16), int(data[1], 16))
-	def dump_memory(self, start, stop):
-		self.mem.show(start, stop)
+	def dump_memory(self, start, stop, arq=None):
+		self.mem.show(start, stop, arq)
 
 	#Routine to add new device to device list
 	def create_disp(self):
@@ -289,19 +313,19 @@ class MVN:
 			switch(int(line[0]))
 			if case(0):
 				if len(line)!=2:
-					raise ValueError("'disp.lst' file badly formulated")
+					raise MVNError("'disp.lst' file badly formulated")
 				self.devs.append(device.device(0, int(line[1])))
 			elif case(1):
 				if len(line)!=2:
-					raise ValueError("'disp.lst' file badly formulated")
+					raise MVNError("'disp.lst' file badly formulated")
 				self.devs.append(device.device(1, int(line[1])))
 			elif case(2):
 				if len(line)!=3:
-					raise ValueError("'disp.lst' file badly formulated")
+					raise MVNError("'disp.lst' file badly formulated")
 				self.devs.append(device.device(2, int(line[1]), printer=line[2]))
 			elif case(3):
 				if len(line)!=4:
-					raise ValueError("'disp.lst' file badly formulated")
+					raise MVNError("'disp.lst' file badly formulated")
 				self.devs.append(device.device(3, int(line[1]), line[2], line[3]))
 
 	#Print the devices on device list
@@ -318,7 +342,7 @@ class MVN:
 	def new_dev(self, dtype, UC, file=None, rwb=None, printer=None):
 		for dev in self.devs:
 			if dev.get_type()==dtype and dev.get_UC()==UC:
-				raise ValueError("Device ja existe")
+				raise MVNError("Device ja existe")
 		self.devs.append(device.device(dtype, UC, file, rwb, printer))
 
 	#Remove specified device

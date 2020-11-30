@@ -90,8 +90,7 @@ The MVN accepts 16 instructions, those are:
 | C | HM |Halt machine |
 | D | GD |Save in AC a pair of nibbles from operand device |
 | E | PD |Send value in AC to operand device |
-| F | SO |Calls the supervisor to deal with specific codes , which are given by the operand |
-
+| F | SO |Calls the supervisor to deal with specific codes, which are given by the operand |
 
 For coding to the MVN, you may write a file (extension ".mvn" preferably) that discribes the inicial state of the memory. To do that you have to set the content of one pair of addresses per line, that is done the following way:
 
@@ -105,7 +104,22 @@ XXXX is the address you're setting, it's value is between 0x0000 and 0x0FFF.
 
 IPPP is the value to be stored in the address, it's between 0x0000 and 0xFFFF, the most significant nibble, I, is the instruction to be executed and the other three, PPP, is the operand.
 
-There is also an stack implemented, the stack pointer (SP) is in address 0x0ffe. To use the stack you should use the OS function, the code 0x10 will place SP in AC, 0x11 will place AC in SP, 0x12 will place the value stored in STPTR address in AC and 0x13 will place AC in SP address.
+The supervisor operand is interpreted as follows:
+
+```
+XXXX FAOO
+```
+
+XXXX is the address, F is the instruction for the supervisor, A is the number os arguments to be passed and OO is the operation the supervisor must execute. The only operations implemented for supervisor are 0xEE, which prints error messages depending on the value on the acumulator, 0xEF, which runs an secondary code in memory and returns main execution when it halts, and 0x57, which operates the staack (full decription above). The arguments are written in the lines preceeding. Hence the code with 2 arguments should look like:
+
+```
+0AAA 0XXX
+0BBB VAL1
+0CCC VAL2
+0XXX F2OO
+```
+
+The stack implemented has its stack pointer (SP) is in address 0x0ffe. To use the stack you should use the OS function, the code (passed via AC) 0 will place SP in AC, 1 will place AC in SP, 2 will place the value stored in STPTR address in AC and 3 will place AC in SP address.
 
 There is also a "mvn.config" file you can set to configure the infinite loop prevention. The code will exit after the number of steps taken exceed max_step (default to 10000), to set it in config file, write a line like: "max_step=[value]" where value is the number of max_step you want to set.
 
