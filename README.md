@@ -123,6 +123,8 @@ The stack implemented has its stack pointer (SP) is in address 0x0ffe. To use th
 
 There is also a "mvn.config" file you can set to configure the infinite loop prevention. The code will exit after the number of steps taken exceed max_step (default to 10000), to set it in config file, write a line like: "max_step=[value]" where value is the number of max_step you want to set.
 
+One last functionality implemented in MVN is an Time Interruption, there is an internal variable called NUM (hardcoded to 50), which represents the time (counted as number of steps) between interruptions, during execution another varible keeps is incremented at each step and, when it reaches NUM, it is made an subroutine call to address 0x000, at this position must be implemented an Interruption Handler.
+
 ### To MLR
 
 The MLR stands for Mounter, Linker and Relocator, it contains 3 codes which gives support for a new language (ASM) to be translated to MVN, the operations allowed in ASM are the same as the ones in MVN, but now you should use the mnemonics to refer to it. More tham that, now you don't have to write the memory address for each instruction, these will be automatically generated, and you can define rotules for each line.

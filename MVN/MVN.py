@@ -5,6 +5,10 @@ import device
 from mvnutils import *
 from switchcase import *
 
+'''This variable represents the number of steps to be done before 
+executing the Time Interruption (subroutine calling 0x000)'''
+NUM=50
+
 '''
 This is the class for the MVN, it contains one memory 
 (0x0000-0x0FFF), 7 registers (MDR, MAR, IC, IR, OP, OI, AC), 
@@ -29,6 +33,7 @@ class MVN:
 		self.AC=register.register()
 		self.SP=0x0ffe
 		self.end=True
+		self.nsteps=0
 		self.ula=ULA.ULA()
 		self.devs=[]
 		self.devs.append(device.device(0,0))
@@ -46,9 +51,14 @@ class MVN:
 	OP:=first nibble of IR
 	OI:=rest of IR'''
 	def decode(self):
-		self.IR.set_value(self.MDR.get_value())
+		if self.nsteps==NUM:
+			self.IR.set_value(0xA000)
+			self.nsteps=0
+		else:
+			self.IR.set_value(self.MDR.get_value())
 		self.OP.set_value(self.IR.get_value()//0x1000)
 		self.OI.set_value(self.IR.get_value()-0x1000*self.OP.get_value())
+		self.nsteps+=1
 
 	'''Make different actions dependind on OP and return False if OP is 
 	Halt Machine.
