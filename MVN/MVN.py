@@ -133,8 +133,6 @@ class MVN:
 		self.MAR.set_value(self.OI.get_value())
 		self.get_mem()
 		self.AC.set_value(self.MDR.get_value())
-		self.MAR.set_value(self.IC.get_value())
-		self.MDR.set_value(self.IR.get_value())
 		self.IC.set_value(self.IC.get_value()+2)
 		return True
 
@@ -146,8 +144,6 @@ class MVN:
 		self.MAR.set_value(self.OI.get_value())
 		self.MDR.set_value(self.AC.get_value())
 		self.set_mem()
-		self.MAR.set_value(self.IC.get_value())
-		self.MDR.set_value(self.IR.get_value())
 		self.IC.set_value(self.IC.get_value()+2)
 		return True
 
@@ -159,8 +155,6 @@ class MVN:
 		self.MAR.set_value(self.OI.get_value())
 		self.MDR.set_value(self.IC.get_value()+2)
 		self.set_mem()
-		self.MAR.set_value(self.IC.get_value())
-		self.MDR.set_value(self.IR.get_value())
 		self.IC.set_value(self.OI.get_value()+2)
 		return True
 
@@ -170,9 +164,7 @@ class MVN:
 	def rs(self):
 		self.MAR.set_value(self.OI.get_value())
 		self.get_mem()
-		self.MAR.set_value(self.IC.get_value())
 		self.IC.set_value(self.MDR.get_value())
-		self.MDR.set_value(self.IR.get_value())
 		return True
 
 	#Only returns False, end of the program
