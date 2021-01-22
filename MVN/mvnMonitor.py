@@ -144,9 +144,7 @@ def run_dbg(mvn, goon):
 	reg_head()
 	step=True
 	while goon:
-		'''Using the MAR instead of IC because it's the current
-		executing address'''
-		if step or mvn.MAR.get_value() in breakpoints:
+		if step or mvn.IC.get_value() in breakpoints:
 			step=False
 			out=False
 			while not out:
