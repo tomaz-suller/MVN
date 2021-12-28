@@ -5,10 +5,6 @@ import device
 from mvnutils import *
 from switchcase import *
 
-'''This variable represents the number of steps to be done before 
-executing the Time Interruption (subroutine calling 0x000)'''
-NUM=50
-
 '''
 This is the class for the MVN, it contains one memory 
 (0x0000-0x0FFF), 7 registers (MDR, MAR, IC, IR, OP, OI, AC), 
@@ -22,7 +18,9 @@ class MVN:
 
 	'''Inicialize MVN contents (memory, registers, ULA and device 
 	list) and set the default devices'''
-	def __init__(self):
+	'''NUM represents the number of steps to be done before 
+	executing the Time Interruption (subroutine calling 0x000)'''
+	def __init__(self, time_limit=50):
 		self.mem=memory.memory()
 		self.MAR=register.register()
 		self.MDR=register.register()
@@ -33,6 +31,7 @@ class MVN:
 		self.AC=register.register()
 		self.SP=0x0ffe
 		self.end=True
+		self.NUM=time_limit
 		self.nsteps=0
 		self.ula=ULA.ULA()
 		self.devs=[]
@@ -51,7 +50,7 @@ class MVN:
 	OP:=first nibble of IR
 	OI:=rest of IR'''
 	def decode(self):
-		if self.nsteps==NUM:
+		if self.nsteps==self.NUM:
 			self.IR.set_value(0xA000)
 			self.nsteps=0
 		else:
