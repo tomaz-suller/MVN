@@ -2,6 +2,7 @@ import memory
 import register
 import ULA
 import device
+import time
 from mvnutils import *
 from switchcase import *
 
@@ -20,7 +21,7 @@ class MVN:
 	list) and set the default devices'''
 	'''NUM represents the number of steps to be done before 
 	executing the Time Interruption (subroutine calling 0x000)'''
-	def __init__(self, time_limit=50):
+	def __init__(self, timeInterrupt=False, time_limit=50, timeout_input=0, quiet=False):
 		self.mem=memory.memory()
 		self.MAR=register.register()
 		self.MDR=register.register()
@@ -31,12 +32,15 @@ class MVN:
 		self.AC=register.register()
 		self.SP=0x0ffe
 		self.end=True
+		self.timeInterrupt=timeInterrupt
 		self.NUM=time_limit
+		self.TIMEOUT=timeout_input
+		self.quiet=quiet
 		self.nsteps=0
 		self.ula=ULA.ULA()
 		self.devs=[]
-		self.devs.append(device.device(0,0))
-		self.devs.append(device.device(1,0))
+		self.devs.append(device.device(0,0, self.quiet))
+		self.devs.append(device.device(1,0, self.quiet))
 
 	'''Set current address and get instruction from memory
 	MAR:=IC
@@ -50,7 +54,7 @@ class MVN:
 	OP:=first nibble of IR
 	OI:=rest of IR'''
 	def decode(self):
-		if self.nsteps==self.NUM:
+		if self.nsteps==self.NUM and self.timeInterrupt:
 			self.IR.set_value(0xA000)
 			self.nsteps=0
 		else:
@@ -129,6 +133,8 @@ class MVN:
 	AC:=MDR
 	IC:=IC+1'''
 	def ld(self):
+		if self.timeInterrupt and self.IC.get_value()>=0x100 and self.OI.get_value()<0x100:
+			raise MVNError("Tentativa de acesso à área reservada por instrução externa")
 		self.MAR.set_value(self.OI.get_value())
 		self.get_mem()
 		self.AC.set_value(self.MDR.get_value())
@@ -140,6 +146,8 @@ class MVN:
 	mem(MAR):=MDR
 	IC:=IC+1'''
 	def mm(self):
+		if self.timeInterrupt and self.IC.get_value()>=0x100 and self.OI.get_value()<0x100:
+			raise MVNError("Tentativa de acesso à área reservada por instrução externa")
 		self.MAR.set_value(self.OI.get_value())
 		self.MDR.set_value(self.AC.get_value())
 		self.set_mem()
@@ -179,7 +187,7 @@ class MVN:
 		nfound=True
 		for dev in self.devs:
 			if self.OI.get_value()//0x0100==dev.get_type() and self.OI.get_value()%0x0100==dev.get_UC():
-				self.AC.set_value(dev.get_data())
+				self.AC.set_value(dev.get_data(self.TIMEOUT))
 				nfound=False
 		if nfound: raise MVNError("Dispositivo não existe")
 		self.IC.set_value(self.IC.get_value()+2)
@@ -188,12 +196,12 @@ class MVN:
 	'''dev:=AC
 	IC:=IC+1'''
 	def pd(self):
-		err=0
+		nfound=0
 		for dev in self.devs:
 			if self.OI.get_value()//0x0100==dev.get_type() and self.OI.get_value()%0x0100==dev.get_UC():
 				dev.put_data(self.AC.get_value())
-				err+=1
-		if err==len(self.devs):
+				nfound+=1
+		if nfound==len(self.devs):
 			raise MVNError("Dispositivo não existe")
 		self.IC.set_value(self.IC.get_value()+2)
 		return True
@@ -239,7 +247,7 @@ class MVN:
 			elif case(2001):
 				if self.OI.get_value()!=0: self.os_error(0,self.OI.get_value()//0x100)
 				print("Desculpe Dave, estou com medo e não posso fazer isso.")
-			else:
+			elif self.quiet:
 				print("Erro desconhecido. Código "+str(self.OI.get_value()//0x100))
 		elif self.OI.get_value()%0x100==0xEF:
 			self.ret=self.IC.get_value()+2
@@ -271,16 +279,57 @@ class MVN:
 			elif case(3):
 				#Set stacktop
 				if self.OI.get_value()//0x100!=1: self.os_error(1,self.OI.get_value()//0x100)
+				self.MAR.set_value(self.MAR.get_value()-2)
+				self.get_mem()
+				self.AC.set_value(self.MDR.get_value())
 				self.MAR.set_value(self.SP)
 				self.get_mem()
+				self.MAR.set_value(self.MDR.get_value())
+				self.MDR.set_value(self.AC.get_value())
+				self.set_mem()		
+			elif self.quiet:
+				print("Instrução desconhecida. Código "+str(self.AC.get_value()//0x100))
+		elif self.OI.get_value()%0x100==0x01:
+			self.MAR.set_value(self.MAR.get_value()-2)
+			self.get_mem()
+			switch(self.AC.get_value())
+			if case(0):
+				if self.OI.get_value()//0x100!=1: self.os_error(1, self.OI.get_value()//0x100)
+				self.AC.set_value(self.ula.execute(0xA, self.MDR.get_value()))#NOT
+			else:
+				if self.OI.get_value()//0x100!=2: self.os_error(2, self.OI.get_value()//0x100)
 				self.AC.set_value(self.MDR.get_value())
 				self.MAR.set_value(self.MAR.get_value()-2)
 				self.get_mem()
-				self.MAR.set_value(self.AC.get_value())
-				self.set_mem()		
-			else:
-				print("Instrução desconhecida. Código "+str(self.OI.get_value()//0x100))
-		else:
+				if case(1):
+					self.AC.set_value(self.ula.execute(0xB , self.AC.get_value(), self.MDR.get_value()))#AND
+				elif case(2):
+					self.AC.set_value(self.ula.execute(0xC , self.AC.get_value(), self.MDR.get_value()))#OR
+				elif case(3):
+					self.AC.set_value(self.ula.execute(0xD , self.AC.get_value(), self.MDR.get_value()))#XOR
+				elif self.quiet:
+					print("Operador desconhecido. Código "+str(self.AC.get_value()))
+		elif self.OI.get_value()%0x100==0x0D:
+			if self.OI.get_value()//0x100!=1: self.os_error(1, self.get_value()//0x100)
+			self.MAR.set_value(self.MAR.get_value()-2)
+			self.get_mem()
+			nfound=True
+			for dev in self.devs:
+				if self.MDR.get_value()//0x0100==dev.get_type() and self.MDR.get_value()%0x0100==dev.get_UC():
+					nfound=False
+					break
+			if nfound: raise MVNError("Dispositivo não existe")
+			switch(self.AC.get_value())
+			if case(0):
+				dev.clean_buffer()
+			elif case(1):
+				dev.append_buffer()
+			elif self.quiet:
+				print("Operador desconhecido. Código "+str(self.AC.get_value()))
+		elif self.OI.get_value()%0x100==0x71:
+			if self.OI.get_value()//0x100!=0: self.os_error(0, self.get_value()//0x100)
+			time.sleep(self.AC.get_value()/1000)
+		elif self.quiet:
 			print("Operação desconhecida. Código "+str(self.OI.get_value()%0x100))
 		self.IC.set_value(self.IC.get_value()+2)
 		return True
@@ -315,19 +364,19 @@ class MVN:
 			if case(0):
 				if len(line)!=2:
 					raise MVNError("'disp.lst' file badly formulated")
-				self.devs.append(device.device(0, int(line[1])))
+				self.devs.append(device.device(0, int(line[1]), quiet=self.quiet))
 			elif case(1):
 				if len(line)!=2:
 					raise MVNError("'disp.lst' file badly formulated")
-				self.devs.append(device.device(1, int(line[1])))
+				self.devs.append(device.device(1, int(line[1]), quiet=self.quiet))
 			elif case(2):
 				if len(line)!=3:
 					raise MVNError("'disp.lst' file badly formulated")
-				self.devs.append(device.device(2, int(line[1]), printer=line[2]))
+				self.devs.append(device.device(2, int(line[1]), printer=line[2], quiet=self.quiet))
 			elif case(3):
 				if len(line)!=4:
 					raise MVNError("'disp.lst' file badly formulated")
-				self.devs.append(device.device(3, int(line[1]), line[2], line[3]))
+				self.devs.append(device.device(3, int(line[1]), line[2], line[3], quiet=self.quiet))
 
 	#Print the devices on device list
 	def print_devs(self):
@@ -344,7 +393,7 @@ class MVN:
 		for dev in self.devs:
 			if dev.get_type()==dtype and dev.get_UC()==UC:
 				raise MVNError("Device ja existe")
-		self.devs.append(device.device(dtype, UC, file, rwb, printer))
+		self.devs.append(device.device(dtype, UC, file, rwb, printer, self.quiet))
 
 	#Remove specified device
 	def rm_dev(self, dtype, UC):
@@ -352,3 +401,4 @@ class MVN:
 			if self.devs[dev].get_type()==dtype and self.devs[dev].get_UC()==UC:
 				self.devs[dev].terminate()
 				self.devs.pop(dev)
+				return

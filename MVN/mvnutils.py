@@ -10,9 +10,9 @@ def valid_value(num, MIN, MAX):
 	if not(MIN<=num and num<=MAX):
 		raise MVNError("Incompatible size")
 
-#Test if argument is 1,2,4,5,6 or 7, raise error
+#Test if argument is 1,2,4,5,6 or 7, A, B, C, D, raise error
 def valid_instru(num):
-	if num not in [1,2,4,5,6,7]:
+	if num not in [1,2,4,5,6,7, 0xA, 0xB, 0xC, 0xD]:
 		raise MVNError("Incompatible instruction")
 
 #Test if argument is between 0 and 4, raise error

@@ -21,7 +21,7 @@ class memory:
 		for cont in range(MAX_ADDR//2):
 			self.map.append(address.address(2*cont, value//0x100))
 			self.map.append(address.address(2*cont+1, value-(value//0x100)*0x100))
-		self.map.append(address.address(MAX_ADDR-1, 0xff))
+		self.map.append(address.address(MAX_ADDR-1, 0x0f))
 		self.map.append(address.address(MAX_ADDR, 0xfc))
 
 	def get_value(self, addr):

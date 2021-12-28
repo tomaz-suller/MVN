@@ -37,6 +37,14 @@ class ULA:
 			return self.mul(ac, oi)
 		elif case(7):
 			return self.div(ac, oi)
+		elif case(0xA):
+			return self._not(ac)
+		elif case(0xB):
+			return self._and(ac, oi)
+		elif case(0xC):
+			return self._or(ac, oi)
+		elif case(0xD):
+			return self._xor(ac, oi)
 	
 	def is_zero(self, num):
 		return num==0x0000
@@ -64,3 +72,15 @@ class ULA:
 		if signal:
 			return self.mul(num1//num2, 0xFFFF)
 		return num1//num2
+
+	def _not(self, num):
+		return num ^ 0xFFFF
+
+	def _and(self, num1, num2):
+		return num1 & num2
+
+	def _or(self, num1, num2):
+		return num1 | num2
+
+	def _xor(self, num1, num2):
+		return num1 ^ num2

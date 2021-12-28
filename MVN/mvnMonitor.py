@@ -1,67 +1,26 @@
 __author__="Miguel Sarraf Ferreira Santucci"
 __email__="miguel.sarraf@usp.br"
-__version__="1.0"
+__version__="1.2"
+__year__="2021"
 
 import MVN
 import os.path
+import argparse
 from mvnutils import *
 from switchcase import *
-
-#Print all the commands available
-def help():
-	print(" COMANDO  PARÂMETROS           OPERAÇÃO")
-	print("---------------------------------------------------------------------------")
-	print("    i                          Re-inicializa MVN")
-	print("    p     [arq]                Carrega programa para a memória")
-	print("    r     [addr] [regs]        Executa programa")
-	print("    b                          Ativa/Desativa modo Debug")
-	print("    s                          Manipula dispositivos de I/O")
-	print("    g                          Lista conteúdo dos registradores")
-	print("    m     [ini] [fim]          Lista conteúdo da memória")
-	print("    h                          Ajuda")
-	print("    x                          Finaliza MVN e terminal")
-
-#Print commands for debugger mode
-def dbg_help():
-	print(" COMANDO  PARÂMETROS           OPERAÇÃO")
-	print("---------------------------------------------------------------------------")
-	print("    c                          Continua execução")
-	print("    s                          Avança um passo na execução")
-	print("    b     [addr]               Insere um breakpoint")
-	print("    x                          Pausa execução")
-	print("    h                          Ajuda")
-	print("    r     [reg] [val]          Atribui valor a registrador")
-	print("    a     [addr] [val]         Atribui valor a memória")
-	print("    e                          Mostra valores dos registradores")
-	print("    m     [ini] [fim]          Lista conteúdo da memória")
+from c3po import C3PO
 
 '''Start an MVN, check if there is any 'disp.lst' file and 
 inicialze the devices in it, return the MVN inicialized'''
-def inicialize(time_interrupt, time_limit):
-	mvn=MVN.MVN(time_interrupt, time_limit)
-	print("MVN Inicializada\n")
+def inicialize(time_interrupt, time_limit, timeout, quiet):
+	mvn=MVN.MVN(time_interrupt, time_limit, timeout, quiet)
+	print(c3po("MVN_ini"))
 	if os.path.exists("disp.lst"):
 		mvn.create_disp()
-		print("Dispositivos de 'disp.lst' inicializados")
+		print(c3po("disp_ini_arq"))
 	else:
-		print("Inicializacao padrao de dispositivos\n")
+		print(c3po("disp_ini_def"))
 	return mvn
-
-#Print the header of the MVN
-def head():
-	print("                Escola Politécnica da Universidade de São Paulo")
-	print("                 PCS3616 - Simulador da Máquina de von Neumann")
-	print("          MVN versão 1.0 (Maio/2020) - Todos os direitos reservados")
-
-#Print the header for the devices
-def dev_head():
-	print("Tipo   UC   Dispositivo")
-	print("---------------------------------")
-
-#Print the header for the registers
-def reg_head():
-	print(" MAR  MDR  IC   IR   OP   OI   AC")
-	print("---- ---- ---- ---- ---- ---- ----")
 
 '''Open given file, read it, separate memory and addresses and 
 send them to the MVN memory'''
@@ -86,10 +45,10 @@ def load(name, mvn):
 				code.pop(line)
 				line-=1
 			else:
-				raise ValueError("Mais de dois numeros na instrucao")
+				raise ValueError(c3po("big_instru"))
 		line+=1
 	mvn.set_memory(code)
-	print("Programa "+name+" carregado")
+	print(c3po("loaded",(name)))
 
 '''Run the code normally using mvn method step. Fisrt thing to do
 is define the values of the booleans vals and sbs and then run until
@@ -97,31 +56,30 @@ goon turns false'''
 def run(mvn, goon, vals, sbs):
 	n_steps=0
 	if vals:
-		s="s"
+		s=c3po("yes")
 	else:
-		s="n"
+		s=c3po("no")
 	try:
-		vals=input("Exibir valores dos registradores a cada passo do ciclo FDE? <s/n> ["+s+"]: ")
+		vals=input(c3po("show_regs", (s)))
 		vals=vals=="s" or len(vals)==0
 	except:
 		vals=True
 
 	if vals:
 		if sbs:
-			s="s"
+			s=c3po("yes")
 		else:
-			s="n"
+			s=c3po("no")
 		try:
-			sbs=input("Excutar a MVN passo a passo? <s/n> ["+s+"]: ")
-			sbs=sbs=="s"
+			sbs=input(c3po("step_by_step", (s)))
+			sbs=sbs==c3po("yes")
 		except:
 			sbs=True
 	else:
 		sbs=False
 
 	if vals:
-		reg_head()
-		
+		print(c3po("reg_head"))
 	while goon:
 		goon=mvn.step()
 		n_steps+=1
@@ -131,17 +89,17 @@ def run(mvn, goon, vals, sbs):
 			else:
 				print(mvn.print_state())
 		if n_steps>max_step:
-			print("Limite de passos atingido, verifique se não há loops infinitos.")
+			print(c3po("infty_loop"))
 			goon=False
 
 '''Run the code in debugger mode, in this mode vals and sbs are not
 needed. The debugger mode has it's own instruction set, to execute 
 debugging operations, see bdg_help() for complete guide'''
 def run_dbg(mvn, goon):
-	print("Começando simulação")
-	print("Os comandos internos do dbg são")
-	dbg_help()
-	reg_head()
+	print(c3po("start"))
+	print(c3po("dbg_comm"))
+	print(c3po("dbg_help"))
+	print(c3po("reg_head"))
 	step=True
 	while goon:
 		if step or mvn.IC.get_value() in breakpoints:
@@ -162,19 +120,19 @@ def run_dbg(mvn, goon):
 								try:
 									breakpoints.append(int(breaks, 16))
 								except:
-									print("Breakpoint deve ser um valor inteiro hexadecimal")
+									print(c3po("break_hex"))
 						else:
-							print("Nenhum endereço passado na instrução")
+							print(c3po("no_addr"))
 					elif case("x"):
 						out=True
 						goon=False
 					elif case("h"):
-						dbg_help()
+						print(c3po("dbg_help"))
 					elif case("r"):
 						if len(read)==3:
 							try:
 								if read[1] not in ["MAR", "MDR", "IC", "IR", "OP", "OI", "AC"]:
-									print("Registrador invalido.")
+									print(c3po("reg_inv"))
 								elif read[1]=="MAR":
 									mvn.MAR.set_value(int(read[2], 16))
 								elif read[1]=="MDR":
@@ -190,7 +148,7 @@ def run_dbg(mvn, goon):
 								elif read[1]=="AC":
 									mvn.AC.set_value(int(read[2], 16))
 							except:
-								print("Enderecos de memória e valores devem ser inteiros hexadecimais")
+								print(c3po("val_hex"))
 					elif case("a"):
 						mvn.mem.set_value(int(read[1], 16), int(read[2], 16))
 					elif case("e"):
@@ -199,7 +157,7 @@ def run_dbg(mvn, goon):
 					elif case("m"):
 						mvn.dump_memory(int(read[1], 16), int(read[2], 16))
 					else:
-						print("Comando não reconhecido\nPressione h para ajuda.")
+						print(c3po("no_rec"))
 		goon=mvn.step() and goon
 		print(mvn.print_state())
 
@@ -209,49 +167,30 @@ Here starts the main code for the MVN's user interface, this will
 look like a cmd to the user, but operating the MVN class
 """
 
+parser=argparse.ArgumentParser(description="MVN execution parameters")
+parser.add_argument("-l", "--language", 		action="store",	type=str,	required=False, help="Language of the MVN. String")
+parser.add_argument("-s", "--max_step", 		action="store", type=int, 	required=False, help="The maximum number of steps to be considered not an infinite loop. Integer")
+parser.add_argument("-i", "--time_interrupt", 	action="store", type=int, 	required=False, help="Tha maximum number of steps before making a time interruption. If not given, time interruptins will be disabled. Integer")
+parser.add_argument("-t", "--timeout_input", 	action="store", type=int, 	required=False, help="The maximun time to wait for user keyboard input in miliseconds. If not given, time timeout will be disabled. Integer")
+parser.add_argument("-q", "--quiet",		 	action="store_false",		required=False, help="When active the MVN enters in silent mode and will no show debug messages during execution.", default=True)
+args=parser.parse_args()
+
+#Initializes C3PO
+c3po=C3PO(args.language if args.language!=None else "en")
+
 #Define steps limit
-max_step=10000
-time_interrupt=False
-time_limit=50
-if os.path.exists("./mvn.config"):
-	conf=open("./mvn.config", "r")
-	data=conf.read()
-	data=data.split("\n")
-	line=0
-	while line<len(data):
-		data[line]=clean(data[line])
-		if len(data[line])==0:
-			data.pop(line)
-			line-=1
-		line+=1
-	else:
-		for line in data:
-			text=""
-			for word in line:
-				text+=word
-			if "=" in word:
-				switch(word[:word.index("=")])
-				if case("max_step"):
-					try:
-						max_step=int(word[word.index("=")+1:])
-					except:
-						print("O valor de max_step deve ser inteiro, usando valor padrão.")
-				elif case("time_interrupt"):
-					try:
-						time_limit=int(word[word.index("=")+1:])
-						time_interrupt=True
-					except:
-						print("O valor de time_limit deve ser inteiro, usando valor padrão.")
-				else:
-					print("Parâmetro desconhecido, usando valor padrão.")
-	conf.close()
+max_step=args.max_step if args.max_step!=None else 10000
+time_interrupt=args.time_interrupt!=None
+time_limit=args.time_interrupt
+timeout=args.timeout_input
+quiet=args.quiet
 
 #First thing to be done is inicialize our MVN
-mvn=inicialize(time_interrupt, time_limit)
+mvn=inicialize(time_interrupt, time_limit, timeout, quiet)
 #Show up the header for the MVN
-head()
+print(c3po("header",(__version__, __year__)))
 #Show options available
-help()
+print(c3po("help"))
 
 '''These booleans will represent if the code should continue to 
 execute (goon), if the register values are to be shown on screen 
@@ -273,22 +212,22 @@ while True:
 		switch(command[0])
 		#To reinicialize the MVN is just to inicialize it one more time
 		if case("i"):
-			mvn=inicialize()
+			mvn=inicialize(time_interrupt, time_limit)
 
 		#To load an program, one argument (the file) is required, if 
 		#it's not given, ask for it, if more are passed, cancel operation
 		elif case("p"):
 			if len(command)==1:
-				name=input("Informe o nome do arquivo de entrada: ")
+				name=input(c3po("inp_file"))
 				name=clean(name)
 				if len(name)!=1:
-					print("Arquivo deve ter exatamente 1 palavra, "+str(len(command))+" passadas.")
+					print(c3po("big_file", (str(len(command)))))
 				else:
 					load(name[0], mvn)
 					goon=True
 					pass
 			elif len(command)>2:
-				print("Arquivo deve ter exatamente 1 palavra, "+str(len(command)-1)+" passadas.")
+				print(c3po("big_file", (str(len(command)-1))))
 			else:
 				name=command[1]
 				load(name, mvn)
@@ -300,7 +239,7 @@ while True:
 		elif case("r"):
 			if goon:
 				try:
-					mvn.IC.set_value(int(input("Informe o endereco do IC ["+str(hex(mvn.IC.get_value())[2:]).zfill(4)+"]: "), 16))
+					mvn.IC.set_value(int(input(c3po("inf_IC", (str(hex(mvn.IC.get_value())[2:]).zfill(4))))))
 				except:
 					pass
 				if not dbg:
@@ -309,73 +248,73 @@ while True:
 					run_dbg(mvn, goon)
 				goon=True	
 			else:
-				print("Nenhum arquivo foi carregado, nada a ser executado.")
+				print(c3po("cant_run"))
 
 		#Start/stop the debugger mode
 		elif case("b"):
 			dbg=not dbg
 			if dbg:
-				print("Modo debugger ativado")
+				print(c3po("deb_on"))
 				breakpoints=[]
 			else:
-				print("Modo debugger desativado")
+				print(c3po("deb_off"))
 
 		#Display the available devices and give options to add or remove
 		elif case("s"):
-			dev_head()
+			print(c3po("dev_head"))
 			mvn.print_devs()
-			switch(input("Adicionar(a) ou remover(r) (ENTER para cancelar): "))
+			switch(input(c3po("dev_deal")))
 			if case("a"):
 				mvn.show_available_devs()
-				dtype=input("Entrar com o tipo de dispositivo (ou ENTER para cancelar): ")
+				dtype=input(c3po("dev_type"))
 				try:
 					dtype=int(dtype)
 					go=True
 				except:
-					print("O tipo de dispositivo especificado é inválido (especifique um valor numérico).")
+					print(c3po("inv_val"))
 					go=False
 				if go:
-					UC=input("Entrar com a unidade logica (ou ENTER para cancelar): ")
+					UC=input(c3po("dev_UL"))
 					try:
 						UC=int(UC)
-						go=True
+						go=True	
 					except:
-						print("O tipo de dispositivo especificado é inválido (especifique um valor numérico).")
+						print(c3po("inv_val"))
 						go=False
 				if go:
 					if dtype==2:
-						name=input("Entrar com o nome da impressora: ")
+						name=input(c3po("print_name"))
 						mvn.new_dev(dtype, UC, printer=name)
 					elif dtype==3:
-						file=input("Digite o nome do arquivo: ")
-						met=input("Digite o modo de operação -> Leitura(l), Escrita(e) ou Leitura e Escrita(b): ")
+						file=input(c3po("file_name"))
+						met=input(c3po("op_mode"))
 						mvn.new_dev(dtype, UC, file, met)
 					else:
 						mvn.new_dev(dtype, UC)
-					print("Dispositivo adicionado (Tipo: "+str(dtype)+" - unidade logica: "+str(UC)+")")
+					print(c3po("dev_add", (str(dtype), str(UC))))
 			elif case("r"):
 				mvn.show_available_devs()
-				dtype=input("Entrar com o tipo de dispositivo (ou ENTER para cancelar): ")
+				dtype=input(c3po("dev_type"))
 				try:
 					dtype=int(dtype)
 					go=True
 				except:
-					print("O tipo de dispositivo especificado é inválido (especifique um valor numérico).")
+					print(c3po("inv_val"))
 					go=False
 				if go:
-					UC=input("Entrar com a unidade logica (ou ENTER para cancelar): ")
+					UC=input(c3po("dev_UL"))
 					try:
 						UC=int(UC)
 						go=True
 					except:
-						print("O tipo de dispositivo especificado é inválido (especifique um valor numérico).")
+						print(c3po("inv_val"))
 						go=False
 				if go:
 					mvn.rm_dev(dtype, UC)
 
 		#Display actual state os the MVN registers
 		elif case("g"):
-			reg_head()
+			print(c3po("reg_head"))
 			print(mvn.print_state())
 
 		#Display the memmory of the MVN given the start and end addresses
@@ -386,31 +325,31 @@ while True:
 					stop=int(command[2], 16)
 					mvn.dump_memory(start, stop)
 				except:
-					print("Enderecos não são valores hexadecimais.")
+					print(c3po("val_hex"))
 			elif len(command)==4:
 				try:
 					start=int(command[1], 16)
 					stop=int(command[2], 16)
 					mvn.dump_memory(start, stop, command[3])
 				except:
-					print("Enderecos não são valores hexadecimais.")
+					print(c3po("val_hex"))
 			elif len(command)>4:
-				print("Mais valores passados que parâmetros.")
+				print(c3po("mult_par"))
 			else:
 				try:
-					start=int(input("Informe o endereco inicial: "), 16)
-					stop=int(input("Informe o endereco final: "), 16)
+					start=int(input(c3po("ini_addr")), 16)
+					stop=int(input(c3po("fin_addr")), 16)
 					mvn.dump_memory(start, stop)
 				except:
-					print("Enderecos não são valores hexadecimais.")
+					print(c3po("val_hex"))
 
 		#Display the available commands
 		elif case("h"):
-			help()
+			print(c3po("help"))
 			
 		#Exit terminal
 		elif case("x"):
 			for dev in mvn.devs:
 				dev.terminate()
-			print("Terminal encerrado.")
+			print(c3po("end"))
 			exit()
