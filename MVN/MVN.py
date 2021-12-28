@@ -18,7 +18,9 @@ class MVN:
 
 	'''Inicialize MVN contents (memory, registers, ULA and device 
 	list) and set the default devices'''
-	def __init__(self):
+	'''NUM represents the number of steps to be done before 
+	executing the Time Interruption (subroutine calling 0x000)'''
+	def __init__(self, time_limit=50):
 		self.mem=memory.memory()
 		self.MAR=register.register()
 		self.MDR=register.register()
@@ -29,6 +31,8 @@ class MVN:
 		self.AC=register.register()
 		self.SP=0x0ffe
 		self.end=True
+		self.NUM=time_limit
+		self.nsteps=0
 		self.ula=ULA.ULA()
 		self.devs=[]
 		self.devs.append(device.device(0,0))
@@ -46,9 +50,14 @@ class MVN:
 	OP:=first nibble of IR
 	OI:=rest of IR'''
 	def decode(self):
-		self.IR.set_value(self.MDR.get_value())
+		if self.nsteps==self.NUM:
+			self.IR.set_value(0xA000)
+			self.nsteps=0
+		else:
+			self.IR.set_value(self.MDR.get_value())
 		self.OP.set_value(self.IR.get_value()//0x1000)
 		self.OI.set_value(self.IR.get_value()-0x1000*self.OP.get_value())
+		self.nsteps+=1
 
 	'''Make different actions dependind on OP and return False if OP is 
 	Halt Machine.
