@@ -927,7 +927,10 @@ def gera_valor(simbolo, estado, contexto):
 	tipo_int=contexto[-1]
 	contexto.append(simbolo)
 	if tipo_int=="'":
-		contexto.append(ord(simbolo[0])*0x100+ord(simbolo[1]))
+		if len(simbolo)==1:
+			contexto.append(ord(simbolo[0]))
+		else:
+			contexto.append(ord(simbolo[0])*0x100+ord(simbolo[1]))
 	else:
 		contexto.append(int(simbolo, codigo_para_base[tipo_int]))
 	return estado, contexto
@@ -951,16 +954,16 @@ def gera_codigo_de_valor(simbolo, estado, contexto):
 			print(f"{AMARELO}Você tem certeza de que sabe o que está fazendo? Na linha {linha} você criou um espaço de memória com tamanho 0...{BRANCO}")
 		preambulo=8*relocavel
 		for end in range(endereco, endereco+2*valor, 2):
-			linha_gerada=f"{preambulo}{hex(end)[2:].zfill(3)} 0000"
+			linha_gerada=f"{hex(preambulo)[2:]}{hex(end)[2:].zfill(3)} 0000"
 			codigo_mvn+=f"{linha_gerada}\n"
 			codigo_lst+=linha_gerada+desempilha_contexto(contexto+[simbolo])
 		endereco+=2*valor-2
 	elif instrucao=="K":
-		linha_gerada=f"{8*relocavel}{hex(endereco)[2:].zfill(3)} {hex(valor)[2:].zfill(4)}"
+		linha_gerada=f"{hex(8*relocavel)[2:]}{hex(endereco)[2:].zfill(3)} {hex(valor)[2:].zfill(4)}"
 		codigo_mvn+=f"{linha_gerada}\n"
 		codigo_lst+=linha_gerada+desempilha_contexto(contexto+[simbolo])
 	else:
-		linha_gerada=f"{8*relocavel}{hex(endereco)[2:].zfill(3)} {OPERADORES.index(instrucao)}{hex(valor)[2:].zfill(3)}"
+		linha_gerada=f"{hex(8*relocavel)[2:]}{hex(endereco)[2:].zfill(3)} {hex(OPERADORES.index(instrucao))[2:]}{hex(valor)[2:].zfill(3)}"
 		codigo_mvn+=f"{linha_gerada}\n"
 		codigo_lst+=linha_gerada+desempilha_contexto(contexto+[simbolo])
 	endereco+=2
@@ -1006,7 +1009,7 @@ def gera_codigo_de_rotulo(simbolo, estado, contexto):
 			preambulo=8*relocavel+5
 		else:
 			preambulo=8*relocavel+2*rotulos[rotulo][1]
-		linha_gerada=f"{hex(preambulo)[2:]}{hex(endereco)[2:].zfill(3)} {OPERADORES.index(instrucao)}{hex(rotulos[rotulo][0])[2:].zfill(3)}"
+		linha_gerada=f"{hex(preambulo)[2:]}{hex(endereco)[2:].zfill(3)} {hex(OPERADORES.index(instrucao))[2:]}{hex(rotulos[rotulo][0])[2:].zfill(3)}"
 		codigo_mvn+=f"{linha_gerada}\n"
 		codigo_lst+=linha_gerada+desempilha_contexto(contexto+[simbolo])
 	endereco+=2

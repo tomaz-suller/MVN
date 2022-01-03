@@ -82,11 +82,17 @@ class device:
 					if read:
 						for nibble in sys.stdin.readline().strip():
 							self.buffer.append(ord(nibble))
-					elif self.quiet:
-						print("Not enough data on buffer, returning 0x0000")
+					else:
+						if self.quiet:
+							print("Not enough data on buffer, returning 0x0000")
 						return 0x0000
 					self.buffer.append(ord("\n"))
-			return self.buffer.pop(0)*0x0100+self.buffer.pop(0)
+			if len(self.buffer)>1:
+				return self.buffer.pop(0)*0x0100+self.buffer.pop(0)
+			else:
+				if self.quiet:
+					print("Not enough data on buffer, returning 0x0000")
+				return 0x0000
 		elif case(3):
 			if self.counter+2>len(self.buffer):
 				if self.quiet: print("No more data to get, returning 0x0000")
