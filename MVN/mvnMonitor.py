@@ -239,7 +239,7 @@ while True:
 		elif case("r"):
 			if goon:
 				try:
-					mvn.IC.set_value(int(input(c3po("inf_IC", (str(hex(mvn.IC.get_value())[2:]).zfill(4))))))
+					mvn.IC.set_value(int(input(c3po("inf_IC", (str(hex(mvn.IC.get_value())[2:]).zfill(4)))), 16))
 				except:
 					pass
 				if not dbg:
