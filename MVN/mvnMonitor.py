@@ -152,7 +152,7 @@ def run_dbg(mvn, goon):
 					elif case("a"):
 						mvn.mem.set_value(int(read[1], 16), int(read[2], 16))
 					elif case("e"):
-						reg_head()
+						print(c3p0("reg_head"))
 						print(mvn.print_state())
 					elif case("m"):
 						mvn.dump_memory(int(read[1], 16), int(read[2], 16))
