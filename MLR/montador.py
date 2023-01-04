@@ -130,10 +130,14 @@ while filtro_ascii.fila_de_eventos!=None:
 carac=categorizador_ascii.roda_um_evento((0))
 
 linha=1
+erro_lexico=False
+eh_coment=False
 
 #Motor para agrupar caracter em palavras
 def categoriza_lexico_letra(evento, extra_params):
 	global linha
+	global erro_lexico
+	global eh_coment
 	chave_base, palavra_acumulada, tipo, dentro_de_aspas=extra_params
 	if tipo=="":
 		return (None,(chave_base, evento, "identificador", dentro_de_aspas))
@@ -142,9 +146,12 @@ def categoriza_lexico_letra(evento, extra_params):
 	elif tipo=="numero":
 		if evento in LETRAS_HEXA:
 			return (None,(chave_base, palavra_acumulada+evento, "numero", dentro_de_aspas))
-		if VERBOSIDADE>-1:
-			print(f"{VERMELHO}Palavra mal formada na linha {linha}.")
-		exit()
+		if not eh_coment:
+			if VERBOSIDADE>-1:
+				print(f"{VERMELHO}Palavra mal formada na linha {linha}.")
+			erro_lexico=True
+			return (None,(chave_base, palavra_acumulada+evento, "erro", dentro_de_aspas))
+		return (None,(chave_base, palavra_acumulada+evento, "identificador", dentro_de_aspas))
 	elif tipo=="especial":
 		if palavra_acumulada[0]=='"':
 			return (None,(chave_base, palavra_acumulada+evento, "especial", dentro_de_aspas))
@@ -156,7 +163,13 @@ def categoriza_lexico_digito(evento, extra_params):
 	if tipo=="":
 		return(None, (chave_base, evento, "numero", dentro_de_aspas))
 	elif tipo=="identificador":
-		return(None, (chave_base, palavra_acumulada+evento, "identificador", dentro_de_aspas))
+		check_hex=True
+		for letra in palavra_acumulada:
+			if letra not in LETRAS_HEXA: check_hex=False
+		if check_hex:
+			return(None, (chave_base, palavra_acumulada+evento, "numero", dentro_de_aspas))
+		else:
+			return(None, (chave_base, palavra_acumulada+evento, "identificador", dentro_de_aspas))
 	elif tipo=="numero":
 		return(None, (chave_base, palavra_acumulada+evento, "numero", dentro_de_aspas))
 	elif tipo=="especial":
@@ -166,15 +179,17 @@ def categoriza_lexico_digito(evento, extra_params):
 					  (chave_base+1, evento, "numero", dentro_de_aspas))
 
 def categoriza_lexico_especial(evento, extra_params):
+	global eh_coment
 	chave_base, palavra_acumulada, tipo, dentro_de_aspas=extra_params
 	if evento=='"': dentro_de_aspas=not dentro_de_aspas
+	elif evento==";": eh_coment=True
 	if tipo=="":
-		if evento in OPERADORES and not dentro_de_aspas:
+		if (evento in OPERADORES or evento in RESERVADAS) and not dentro_de_aspas:
 			return (Evento(chave_base, "especial", evento), 
 					  (chave_base+1, "", "", dentro_de_aspas))
 		return (None, (chave_base, evento, "especial", dentro_de_aspas))
 	elif tipo=="identificador":
-		if evento in OPERADORES and not dentro_de_aspas:
+		if (evento in OPERADORES or evento in RESERVADAS) and not dentro_de_aspas:
 			identifi=Evento(chave_base, "identificador", palavra_acumulada)
 			operador=Evento(chave_base+1, "especial", evento)
 			identifi.proximo=operador
@@ -185,7 +200,7 @@ def categoriza_lexico_especial(evento, extra_params):
 		return (Evento(chave_base, "numero", palavra_acumulada), 
 					  (chave_base+1, evento, "especial", dentro_de_aspas))
 	elif tipo=="especial":
-		if evento in OPERADORES and not dentro_de_aspas:
+		if (evento in OPERADORES or evento in RESERVADAS) and not dentro_de_aspas:
 			especial=Evento(chave_base, "especial", palavra_acumulada)
 			operador=Evento(chave_base+1, "especial", evento)
 			especial.proximo=operador
@@ -233,6 +248,10 @@ palavra=categorizador_lexico.roda_um_evento((0, "", "", False))
 
 while palavra[0]==None:
 	palavra=categorizador_lexico.roda_um_evento(palavra[1])
+
+if erro_lexico:
+	print(f"{VERMELHO}O código está lexicamente errado.{BRANCO}")
+	sys.exit()
 
 #Motor para categorizar e agrupar palvras em reservadas
 def recategoriza_identificador(evento, extra_params):
@@ -297,6 +316,7 @@ while palavra[0]==None:
 pilha_retorno=[]
 linha=1
 erro_sintatico=False
+is_panico=False
 
 #Retorno das rotinas (estado, contador, transicao)
 def fim_codigo(simbolo, estado): 
@@ -421,7 +441,8 @@ transicoes_sintatico={
 				">"					: (entry_point, "P13"),
 				"<"					: (external, "P13"),
 				";"					: (faz_nada, "P10"),
-				"instrucao"			: (instrucao, "P12")
+				"instrucao"			: (instrucao, "P12"),
+				"else"				: (faz_nada, "PANICO")
 			},
 			"P1":{
 				"controle"			: (faz_nada, "P1"),
@@ -441,18 +462,22 @@ transicoes_sintatico={
 			},
 			"P4":{
 				"terminal"			: (checa_hex, "P9"),
+				"n-terminal"		: (checa_hex, "P9"),
 				"else"				: (faz_nada, "PANICO")
 			},
 			"P5":{
 				"terminal"			: (checa_dec, "P9"),
+				"n-terminal"		: (checa_dec, "P9"),
 				"else"				: (faz_nada, "PANICO")
 			},
 			"P6":{
 				"terminal"			: (checa_oct, "P9"),
+				"n-terminal"		: (checa_oct, "P9"),
 				"else"				: (faz_nada, "PANICO")
 			},
 			"P7":{
 				"terminal"			: (checa_bin, "P9"),
+				"n-terminal"		: (checa_bin, "P9"),
 				"else"				: (faz_nada, "PANICO")
 			},
 			"P8":{
@@ -513,6 +538,8 @@ def sintatico_generico(evento, busca, extra_params):
 	global transicoes_sintatico
 	global linha
 	global pilha_retorno
+	global erro_sintatico
+	global is_panico
 	chave_base, atual=extra_params
 	if VERBOSIDADE>2:
 		print(f"No estado {atual}, recebi {evento}, que foi buscado como {busca}, e a pilha está assim: {pilha_retorno}")
@@ -524,8 +551,12 @@ def sintatico_generico(evento, busca, extra_params):
 	if rotina==None:
 		estado_novo=operacao(evento, param)
 		if param=="PANICO":
-			if VERBOSIDADE>1:
-				print("Encontrado um erro, indo para o estado de pânico.")
+			if not is_panico:
+				if VERBOSIDADE>2:
+					print("Encontrado um erro, indo para o estado de pânico.")
+				print(f"{VERMELHO}Erro na linha {linha}. {evento}, que é um(a) {busca}, não corresponde ao esperado.{BRANCO}")
+				erro_sintatico=True
+			is_panico=True
 			return (chave_base+1, "PANICO")
 		return sintatico_generico(evento, busca, (chave_base, estado_novo))
 	else:
@@ -545,8 +576,9 @@ def sintatico_instrucao(evento, extra_params):
 	return sintatico_generico(evento, "instrucao", extra_params)
 
 def sintatico_controle(evento, extra_params):
-	global linha
+	global linha, is_panico
 	linha+=1
+	is_panico=False
 	return sintatico_generico(evento, "controle", extra_params)
 
 def sintatico_eof(evento, extra_params):
@@ -597,7 +629,7 @@ linha=1
 endereco=BASE
 relocavel=ABSOLUTO
 rotulos={}
-externals=set()
+externals=[]
 erro_vars=False
 codigo_para_base={"/":16, "=":10, "@":8, "#":2}
 
@@ -612,12 +644,12 @@ def adiciona_external(simbolo, estado, contexto):
 			if VERBOSIDADE>-1:
 				print(f"{VERMELHO}Erro na linha {linha}. Já existe rotulo com nome {simbolo}.{BRANCO}")
 		else:
-			externals.add(simbolo)
+			externals.append(simbolo)
 	return estado, contexto
 
 def adiciona_rotulo(simbolo, estado, contexto):
 	global rotulos, linha, externals, erro_vars, endereco, relocavel
-	if simbolo in set.union(externals, set(rotulos.keys())):
+	if simbolo in set.union(set(externals), set(rotulos.keys())):
 		if simbolo in externals:
 			erro_vars=True
 			if VERBOSIDADE>-1:
@@ -682,26 +714,30 @@ transicoes_semantico_1={
 				"'"					: (adiciona_id, "P8")
 			},
 			"P4":{
-				"terminal"			: (define_endereco, "P9")
+				"terminal"			: (define_endereco, "P9"),
+				"n-terminal"		: (define_endereco, "P9")
 			},
 			"P5":{
-				"terminal"			: (define_endereco, "P9")
+				"terminal"			: (define_endereco, "P9"),
+				"n-terminal"		: (define_endereco, "P9")
 			},
 			"P6":{
-				"terminal"			: (define_endereco, "P9")
+				"terminal"			: (define_endereco, "P9"),
+				"n-terminal"		: (define_endereco, "P9")
 			},
 			"P7":{
-				"terminal"			: (define_endereco, "P9")
+				"terminal"			: (define_endereco, "P9"),
+				"n-terminal"		: (define_endereco, "P9")
 			},
 			"P8":{
 				"n-terminal"		: (define_endereco, "P9")
 			},
 			"P9":{
-				";"					: (faz_nada, "P10"),
+				";"					: (atualiza_endereco, "P10"),
 				"controle"			: (atualiza_endereco, "P0")
 			},
 			"P10":{
-				"controle"			: (atualiza_endereco, "P0"),
+				"controle"			: (faz_nada, "P0"),
 				"terminal"			: (faz_nada, "P10"),
 				"n-terminal"		: (faz_nada, "P10"),
 				"#"					: (faz_nada, "P10"),
@@ -730,7 +766,7 @@ transicoes_semantico_1={
 				"n-terminal"		: (adiciona_external, "P14")
 			},
 			"P14":{
-				";"					: (faz_nada, "P10"),
+				";"					: (atualiza_endereco, "P10"),
 				"controle"			: (atualiza_endereco, "P0")
 			}
 }
@@ -791,7 +827,7 @@ linha=1
 
 def confere_rotulo(simbolo, estado, contexto):
 	global rotulos, variaveis, vetores, externals, linha, erro_vars
-	if simbolo not in set.union(externals, set(rotulos.keys())):
+	if simbolo not in set.union(set(externals), set(rotulos.keys())):
 		erro_vars=True
 		if VERBOSIDADE>-1:
 			print(f"{VERMELHO}Erro na linha {linha}. Rótulo {simbolo} não foi definido.{BRANCO}")
@@ -827,18 +863,23 @@ transicoes_semantico_2={
 				"'"					: (faz_nada, "P8")
 			},
 			"P4":{
-				"terminal"			: (faz_nada, "P9")
+				"terminal"			: (faz_nada, "P9"),
+				"n-terminal"		: (faz_nada, "P9")
 			},
 			"P5":{
-				"terminal"			: (faz_nada, "P9")
+				"terminal"			: (faz_nada, "P9"),
+				"n-terminal"		: (faz_nada, "P9")
 			},
 			"P6":{
-				"terminal"			: (faz_nada, "P9")
+				"terminal"			: (faz_nada, "P9"),
+				"n-terminal"		: (faz_nada, "P9")
 			},
 			"P7":{
-				"terminal"			: (faz_nada, "P9")
+				"terminal"			: (faz_nada, "P9"),
+				"n-terminal"		: (faz_nada, "P9")
 			},
 			"P8":{
+				"n-terminal"		: (faz_nada, "P9"),
 				"n-terminal"		: (faz_nada, "P9")
 			},
 			"P9":{
@@ -974,13 +1015,13 @@ def gera_codigo_de_rotulo(simbolo, estado, contexto):
 	rotulo=contexto[-1]
 	instrucao=contexto[-2]
 	if instrucao=="<":
-		linha_gerada=f"4{hex(contexternal)[2:].zfill(3)} 0000"
+		linha_gerada=f"4{hex(contexternal)[2:].zfill(3)} 0000 ; '< {rotulo}'"
 		codigo_mvn+=f"{linha_gerada}\n"
 		codigo_lst+=linha_gerada+desempilha_contexto(contexto+[simbolo])
 		contexternal+=1
 		endereco-=2
 	elif instrucao==">":
-		linha_gerada=f"{hex(2*rotulos[rotulo][1])[2:]}{hex(endereco)[2:].zfill(3)} {hex(rotulos[rotulo][0])[2:].zfill(4)}"
+		linha_gerada=f"{hex(2*rotulos[rotulo][1])[2:]}{hex(rotulos[rotulo][0])[2:].zfill(3)} {hex(rotulos[rotulo][0])[2:].zfill(4)} ; '> {rotulo}'"
 		codigo_mvn+=f"{linha_gerada}\n"
 		codigo_lst+=linha_gerada+desempilha_contexto(contexto+[simbolo])
 	elif instrucao in ["@", "&"]:
@@ -999,17 +1040,19 @@ def gera_codigo_de_rotulo(simbolo, estado, contexto):
 	elif instrucao=="K":
 		if rotulo in externals:
 			preambulo=8*relocavel+5
+			linha_gerada=f"{hex(preambulo)[2:]}{hex(endereco)[2:].zfill(3)} {hex(externals.index(rotulo))[2:].zfill(4)}"
 		else:
 			preambulo=8*relocavel+2*rotulos[rotulo][1]
-		linha_gerada=f"{hex(preambulo)[2:]}{hex(endereco)[2:].zfill(3)} {hex(rotulos[rotulo][0])[2:].zfill(4)}"
+			linha_gerada=f"{hex(preambulo)[2:]}{hex(endereco)[2:].zfill(3)} {hex(rotulos[rotulo][0])[2:].zfill(4)}"
 		codigo_mvn+=f"{linha_gerada}\n"
 		codigo_lst+=linha_gerada+desempilha_contexto(contexto+[simbolo])
 	else:
 		if rotulo in externals:
 			preambulo=8*relocavel+5
+			linha_gerada=f"{hex(preambulo)[2:]}{hex(endereco)[2:].zfill(3)} {hex(OPERADORES.index(instrucao))[2:]}{hex(externals.index(rotulo))[2:].zfill(3)}"
 		else:
 			preambulo=8*relocavel+2*rotulos[rotulo][1]
-		linha_gerada=f"{hex(preambulo)[2:]}{hex(endereco)[2:].zfill(3)} {hex(OPERADORES.index(instrucao))[2:]}{hex(rotulos[rotulo][0])[2:].zfill(3)}"
+			linha_gerada=f"{hex(preambulo)[2:]}{hex(endereco)[2:].zfill(3)} {hex(OPERADORES.index(instrucao))[2:]}{hex(rotulos[rotulo][0])[2:].zfill(3)}"
 		codigo_mvn+=f"{linha_gerada}\n"
 		codigo_lst+=linha_gerada+desempilha_contexto(contexto+[simbolo])
 	endereco+=2
@@ -1041,18 +1084,23 @@ transicoes_semantico_3={
 				"'"					: (adiciona_id, "P8")
 			},
 			"P4":{
-				"terminal"			: (gera_valor, "P9")
+				"terminal"			: (gera_valor, "P9"),
+				"n-terminal"		: (gera_valor, "P9")
 			},
 			"P5":{
-				"terminal"			: (gera_valor, "P9")
+				"terminal"			: (gera_valor, "P9"),
+				"n-terminal"		: (gera_valor, "P9")
 			},
 			"P6":{
-				"terminal"			: (gera_valor, "P9")
+				"terminal"			: (gera_valor, "P9"),
+				"n-terminal"		: (gera_valor, "P9")
 			},
 			"P7":{
-				"terminal"			: (gera_valor, "P9")
+				"terminal"			: (gera_valor, "P9"),
+				"n-terminal"		: (gera_valor, "P9")
 			},
 			"P8":{
+				"n-terminal"		: (gera_valor, "P9"),
 				"n-terminal"		: (gera_valor, "P9")
 			},
 			"P9":{

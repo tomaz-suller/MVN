@@ -1,5 +1,6 @@
 import os.path
 import subprocess
+import re
 
 #Error class
 class MVNError(Exception):
@@ -41,7 +42,7 @@ def valid_printer(printer):
 no content'''
 def clean(line):
 	res=[]
-	line=line.split(" ")
+	line=re.split(" |\t", line)
 	for word in line:
 		if word!="":
 			res.append(word)

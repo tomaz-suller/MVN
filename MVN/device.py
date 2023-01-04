@@ -18,7 +18,7 @@ class device:
 
 	'''Inicialize the device given the type, the UC and other
 	convinient parameters'''
-	def __init__(self, dtype, UC, file=None, rwb=None, printer=None, quiet=False):
+	def __init__(self, dtype, UC, file=None, rwb=None, printer=None, quiet=False, line_feed="\n"):
 		valid_type(dtype)
 		self.dtype=dtype
 		self.UC=UC
@@ -41,6 +41,8 @@ class device:
 			self.printer=printer
 		elif self.dtype==0:
 			self.buffer=[]
+		elif self.dtype==1:
+			self.line_feed=line_feed
 
 	#Return True weather the device is readable
 	def is_readable(self):
@@ -109,7 +111,7 @@ class device:
 		valid_value(value, MIN_VALUE, MAX_VALUE)
 		switch(self.dtype)
 		if case(1):
-			print(chr(value//0x0100)+chr(value%0x0100))
+			print(chr(value//0x0100)+chr(value%0x0100), end=self.line_feed)
 		elif case(2):
 			out=open("will_print.txt", "rb")
 			out.write(value//0x0100)

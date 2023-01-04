@@ -63,6 +63,12 @@ class C3PO:
 				"es":"Más de dos numeros en la instrucción",
 				"tl":"cha' mI' law' ra' mI' puS"
 			},
+			"big_number":{
+				"en":"Number is too big for the MVN",
+				"pt":"Número é grande demais para a MVN",
+				"es":"Número és demasiado grande para la MVN",
+				"tl":"MVNvaD tlhoy tIn mI'"
+			},
 			"loaded":{
 				"en":"Program %s loaded",
 				"pt":"Programa %s carregado",
@@ -254,6 +260,12 @@ class C3PO:
 				"pt":"Terminal encerrado",
 				"es":"Terminal cerrado",
 				"tl":"rInta' jIH"
+			},
+			"no_file":{
+				"en":"File does not exist",
+				"pt":"O arquivo não existe",
+				"es":"Él archivo no existe",
+				"tl":""
 			}
 		}
 	def __call__(self, title, args=()):

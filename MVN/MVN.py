@@ -21,7 +21,7 @@ class MVN:
 	list) and set the default devices'''
 	'''NUM represents the number of steps to be done before 
 	executing the Time Interruption (subroutine calling 0x000)'''
-	def __init__(self, timeInterrupt=False, time_limit=50, timeout_input=0, quiet=False):
+	def __init__(self, timeInterrupt=False, time_limit=50, timeout_input=0, line_feed="\n", quiet=False):
 		self.mem=memory.memory()
 		self.MAR=register.register()
 		self.MDR=register.register()
@@ -35,12 +35,32 @@ class MVN:
 		self.timeInterrupt=timeInterrupt
 		self.NUM=time_limit
 		self.TIMEOUT=timeout_input
+		self.line_feed=line_feed
 		self.quiet=quiet
 		self.nsteps=0
 		self.ula=ULA.ULA()
 		self.devs=[]
 		self.devs.append(device.device(0,0, self.quiet))
-		self.devs.append(device.device(1,0, self.quiet))
+		self.devs.append(device.device(1,0, self.quiet, line_feed=self.line_feed))
+
+		# key:		instruction in code
+		# value:	original instruction
+		self.instru_translator={0x0: 0x0,
+								0x1: 0x1,
+								0x2: 0x2,
+								0x3: 0x3,
+								0x4: 0x4,
+								0x5: 0x5,
+								0x6: 0x6,
+								0x7: 0x7,
+								0x8: 0x8,
+								0x9: 0x9,
+								0xa: 0xa,
+								0xb: 0xb,
+								0xc: 0xc,
+								0xd: 0xd,
+								0xe: 0xe,
+								0xf: 0xf}
 
 	'''Set current address and get instruction from memory
 	MAR:=IC
@@ -67,11 +87,12 @@ class MVN:
 	Halt Machine.
 	If OP is logic or arithmetic calls ULA to do it'''
 	def execute(self):
-		switch(self.OP.get_value())
+		switch(self.instru_translator[self.OP.get_value()])
 		if case(0):
 			return self.jp()
 		elif case(1) or case(2):
-			if self.ula.execute(self.OP.get_value(), self.AC.get_value()):
+			if self.ula.execute(self.instru_translator[self.OP.get_value()], 
+								self.AC.get_value()):
 				self.IC.set_value(self.OI.get_value())
 			else:
 				self.IC.set_value(self.IC.get_value()+2)
@@ -81,7 +102,9 @@ class MVN:
 		elif case(4) or case(5) or case(6) or case(7):
 			self.MAR.set_value(self.OI.get_value())
 			self.get_mem()
-			self.AC.set_value(self.ula.execute(self.OP.get_value(), self.AC.get_value(), self.MDR.get_value()))
+			self.AC.set_value(self.ula.execute(self.instru_translator[self.OP.get_value()], 
+												self.AC.get_value(), 
+												self.MDR.get_value()))
 			self.IC.set_value(self.IC.get_value()+2)
 			return True
 		elif case(8):
@@ -368,7 +391,7 @@ class MVN:
 			elif case(1):
 				if len(line)!=2:
 					raise MVNError("'disp.lst' file badly formulated")
-				self.devs.append(device.device(1, int(line[1]), quiet=self.quiet))
+				self.devs.append(device.device(1, int(line[1]), quiet=self.quiet, line_feed=self.line_feed))
 			elif case(2):
 				if len(line)!=3:
 					raise MVNError("'disp.lst' file badly formulated")

@@ -1,6 +1,6 @@
 __author__="Miguel Sarraf Ferreira Santucci"
 __email__="miguel.sarraf@usp.br"
-__version__="1.2"
+__version__="1.3"
 __year__="2021"
 
 import MVN
@@ -12,8 +12,8 @@ from c3po import C3PO
 
 '''Start an MVN, check if there is any 'disp.lst' file and 
 inicialze the devices in it, return the MVN inicialized'''
-def inicialize(time_interrupt, time_limit, timeout, quiet):
-	mvn=MVN.MVN(time_interrupt, time_limit, timeout, quiet)
+def inicialize(time_interrupt, time_limit, timeout, line_feed, quiet):
+	mvn=MVN.MVN(time_interrupt, time_limit, timeout, line_feed, quiet)
 	print(c3po("MVN_ini"))
 	if os.path.exists("disp.lst"):
 		mvn.create_disp()
@@ -25,14 +25,14 @@ def inicialize(time_interrupt, time_limit, timeout, quiet):
 '''Open given file, read it, separate memory and addresses and 
 send them to the MVN memory'''
 def load(name, mvn):
-	valid_file(name)
+	try:
+		valid_file(name)
+	except:
+		print(c3po("no_file"))
+		return False
 	file=open(name, "r")
 	raw=file.read()
-	code=""
-	for l in raw:
-		if l=="\t":code+=" "
-		else:code+=l
-	code=code.split("\n")
+	code=raw.split("\n")
 	line=0
 	while line < len(code):
 		try:
@@ -45,10 +45,16 @@ def load(name, mvn):
 				code.pop(line)
 				line-=1
 			else:
-				raise ValueError(c3po("big_instru"))
+				print(c3po("big_instru"))
+				return False
 		line+=1
-	mvn.set_memory(code)
+	try:
+		mvn.set_memory(code)
+	except:
+		print(c3po("big_number"))
+		return False
 	print(c3po("loaded",(name)))
+	return True
 
 '''Run the code normally using mvn method step. Fisrt thing to do
 is define the values of the booleans vals and sbs and then run until
@@ -152,7 +158,7 @@ def run_dbg(mvn, goon):
 					elif case("a"):
 						mvn.mem.set_value(int(read[1], 16), int(read[2], 16))
 					elif case("e"):
-						reg_head()
+						print(c3po("reg_head"))
 						print(mvn.print_state())
 					elif case("m"):
 						mvn.dump_memory(int(read[1], 16), int(read[2], 16))
@@ -172,6 +178,7 @@ parser.add_argument("-l", "--language", 		action="store",	type=str,	required=Fal
 parser.add_argument("-s", "--max_step", 		action="store", type=int, 	required=False, help="The maximum number of steps to be considered not an infinite loop. Integer")
 parser.add_argument("-i", "--time_interrupt", 	action="store", type=int, 	required=False, help="Tha maximum number of steps before making a time interruption. If not given, time interruptins will be disabled. Integer")
 parser.add_argument("-t", "--timeout_input", 	action="store", type=int, 	required=False, help="The maximun time to wait for user keyboard input in miliseconds. If not given, time timeout will be disabled. Integer")
+parser.add_argument("-f", "--line_feed", 		action="store", type=str, 	required=False, help="The character to be used as line feed when writing on screen devices.", default="\n")
 parser.add_argument("-q", "--quiet",		 	action="store_false",		required=False, help="When active the MVN enters in silent mode and will no show debug messages during execution.", default=True)
 args=parser.parse_args()
 
@@ -183,10 +190,11 @@ max_step=args.max_step if args.max_step!=None else 10000
 time_interrupt=args.time_interrupt!=None
 time_limit=args.time_interrupt
 timeout=args.timeout_input
+line_feed=args.line_feed
 quiet=args.quiet
 
 #First thing to be done is inicialize our MVN
-mvn=inicialize(time_interrupt, time_limit, timeout, quiet)
+mvn=inicialize(time_interrupt, time_limit, timeout, line_feed, quiet)
 #Show up the header for the MVN
 print(c3po("header",(__version__, __year__)))
 #Show options available
@@ -212,7 +220,7 @@ while True:
 		switch(command[0])
 		#To reinicialize the MVN is just to inicialize it one more time
 		if case("i"):
-			mvn=inicialize(time_interrupt, time_limit)
+			mvn=inicialize(time_interrupt, time_limit, mvn.TIMEOUT, mvn.line_feed, mvn.quiet)
 
 		#To load an program, one argument (the file) is required, if 
 		#it's not given, ask for it, if more are passed, cancel operation
@@ -223,15 +231,13 @@ while True:
 				if len(name)!=1:
 					print(c3po("big_file", (str(len(command)))))
 				else:
-					load(name[0], mvn)
-					goon=True
+					goon=load(name[0], mvn)
 					pass
 			elif len(command)>2:
 				print(c3po("big_file", (str(len(command)-1))))
 			else:
 				name=command[1]
-				load(name, mvn)
-				goon=True
+				goon=load(name, mvn)
 
 		#To run the program we have to ask the user it's preference 
 		#on the starting address and call correspondent function to 
@@ -265,6 +271,7 @@ while True:
 			mvn.print_devs()
 			switch(input(c3po("dev_deal")))
 			if case("a"):
+				fail=False
 				mvn.show_available_devs()
 				dtype=input(c3po("dev_type"))
 				try:
@@ -288,10 +295,15 @@ while True:
 					elif dtype==3:
 						file=input(c3po("file_name"))
 						met=input(c3po("op_mode"))
-						mvn.new_dev(dtype, UC, file, met)
+						try:
+							mvn.new_dev(dtype, UC, file, met)
+						except:
+							print(c3po("no_file"))
+							fail=True
 					else:
 						mvn.new_dev(dtype, UC)
-					print(c3po("dev_add", (str(dtype), str(UC))))
+					if not fail:
+						print(c3po("dev_add", (str(dtype), str(UC))))
 			elif case("r"):
 				mvn.show_available_devs()
 				dtype=input(c3po("dev_type"))

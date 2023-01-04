@@ -7,7 +7,7 @@ def load(name):
 	raw=raw.split("\n")
 	code=[]
 	for line in raw:
-		code.append(line.split(" ")[:-1])
+		code.append(line.split(" "))
 	code.pop(-1)
 	return code
 
@@ -34,7 +34,7 @@ for line in file:
 	if len(line)==2:
 		addr=int(line[0][1:],16)
 		switch(line[0][0])
-		if case("a") or case("2"): line[1]=line[1][0]+hex(int(line[1][1:],16)+base)[2:].zfill(3)
+		if (case("a") or case("2")) and line[1][0] in ["0", "1", "2", "4", "5", "6", "7", "8", "9", "a", "b"]: line[1]=line[1][0]+hex(int(line[1][1:],16)+base)[2:].zfill(3)
 		if case("8") and addr+base>0x0fff:raise ValueError("Base incompatível com código")
 		line[0]=hex(addr+base)[2:].zfill(4)
 

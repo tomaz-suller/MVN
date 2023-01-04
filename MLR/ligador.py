@@ -3,11 +3,17 @@ import sys
 def load(name):
 	raw=open(name, "r")
 	raw=raw.read()
+	raw=raw.replace("\t", " ")
 	raw=raw.split("\n")
 	code=[]
 	for line in raw:
+		'''pure=line.split(";")
+								if type(pure)==list: code.append(pure[0].split(" "))
+								else: code.append(pure.split(" "))
+								for elem in range(len(code[-1])):
+									if code[-1][elem]==[]: code[-1].pop(elem)
+								if code[-1]==['']: code.pop(-1)'''
 		code.append(line.split(" "))
-	code.pop(-1)
 	return code
 
 #Open all the files
@@ -41,10 +47,10 @@ for file in files:
 		if len(line)==2 and int(line[0][0],16)>=8:
 			for nline in file[:-1]:
 				if len(nline)==2 and nline[1][1:]==line[0][1:] and nline[0][0] in ["2", "a"] and nline[1][0] in ["0", "1", "2", "4", "5", "6", "7", "8", "9", "a", "b"]: nline[1]=nline[1][0]+hex(int(line[0][1:],16)+base)[2:].zfill(3)
-				if len(nline)==5 and nline[3]=="'>" and nline[0][1:]==line[0][1:]: nline[0]=nline[0][0]+hex(int(line[0][1:],16)+base)[2:].zfill(3)
 			line[0]=line[0][0]+hex(int(line[0][1:],16)+base)[2:].zfill(3)
-	base=int(file[-2][0][1:],16)+2
-
+		elif len(line)==5 and int(line[0][0],16)==2: line[0]=line[0][0]+hex(int(line[0][1:],16)+base)[2:].zfill(3)
+	#base=int(file[-3][0][1:],16)+2
+	
 #Generate entry points dictionary
 entry_points={}
 for file in files:
