@@ -19,6 +19,10 @@ class Address:
     def address(self) -> int:
         return self._address
 
+    @address.setter
+    def address(self, address: int):
+        self._address = address
+
     @property
     def value(self) -> int:
         return self._value
