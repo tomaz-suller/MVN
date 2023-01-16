@@ -1,0 +1,4 @@
+-e .
+pytest
+pylint
+flake8
