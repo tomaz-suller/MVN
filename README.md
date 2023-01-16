@@ -1,4 +1,24 @@
-# MVN simulator
+# MVN Simulator
+
+[![PyPI - Version](https://img.shields.io/pypi/v/mvn-simulator.svg)](https://pypi.org/project/mvn-simulator)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/mvn-simulator.svg)](https://pypi.org/project/mvn-simulator)
+
+-----
+
+**Table of Contents**
+
+- [Installation](#installation)
+- [License](#license)
+
+## Installation
+
+```console
+pip install mvn-simulator
+```
+
+## License
+
+`mvn-simulator` is distributed under the terms of the [MIT](https://spdx.org/licenses/MIT.html) license.
 
 ## What?
 
