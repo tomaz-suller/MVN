@@ -1,19 +1,26 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 @dataclass
 class Nibble:
-    value: int = 0
+    value: int = 0x0
 
     def __post_init__(self):
-        if not 0x0 <= self.value <= 0xF:
-            raise ValueError(f"value {self.value} does not fit into a nibble")
+        self.value = self.value & 0xF
 
 
 @dataclass
 class Byte:
-    value: int = 0
+    most_significant: Nibble = field(init=False, compare=False)
+    least_significant: Nibble = field(init=False, compare=False)
 
-    def __post_init__(self):
-        if not 0x00 <= self.value <= 0xFF:
-            raise ValueError(f"value {self.value} does not fit into a byte")
+    def __init__(self, value: int = 0x00):
+        self.most_significant = Nibble((value & 0xF0) >> 4)
+        self.least_significant = Nibble(value & 0x0F)
+
+    @property
+    def value(self) -> int:
+        return (
+            (self.most_significant.value << 4)
+            + self.least_significant.value
+        )
