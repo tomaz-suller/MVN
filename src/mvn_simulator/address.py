@@ -25,7 +25,7 @@ class Address:
 
     @value.setter
     def value(self, value_: int):
-        if 0xFF <= value_ <= 0x00:
+        if 0x00 <= value_ <= 0xFF:
             self._value = value_
         else:
             raise MvnError(
