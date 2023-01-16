@@ -1,4 +1,4 @@
-from .utils import MvnError
+from .binary import Byte
 
 
 class MemoryPosition:
@@ -8,10 +8,10 @@ class MemoryPosition:
     It also contains to get address and value and to set the value
     """
 
-    def __init__(self, address: int, value: int = 0):
+    def __init__(self, address: int, value: int = 0x00):
         """Inicialize address and value"""
         self._address: int = None
-        self._value: int = None
+        self._content: Byte = None
         self.address = address
         self.value = value
 
@@ -25,14 +25,11 @@ class MemoryPosition:
 
     @property
     def value(self) -> int:
-        return self._value
+        return self._content.value
 
     @value.setter
-    def value(self, value_: int):
-        if 0x00 <= value_ <= 0xFF:
-            self._value = value_
-        else:
-            raise MvnError(f"value {value_} does not fit in a single memory address")
+    def value(self, value: int):
+        self._content = Byte(value)
 
     def set_value(self, value: int):
         self.value = value
