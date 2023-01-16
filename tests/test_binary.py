@@ -1,4 +1,4 @@
-from src.mvn_simulator.binary import Nibble, Byte
+from src.mvn_simulator.binary import Nibble, Byte, Word
 
 
 def test_valid_nibble():
@@ -42,3 +42,26 @@ def test_byte_overflow():
     assert byte.value == 0x11
     byte = Byte(0xFFF)
     assert byte.value == 0xFF
+
+
+def test_valid_word():
+    for value in range(0, 0x10000):
+        print(value)
+        word = Word(value)
+        assert word.value == value
+
+
+def test_default_word():
+    word = Word()
+    assert word.value == 0
+
+
+def test_word_overflow():
+    word = Word(0x10000)
+    assert word.value == 0x0000
+    word = Word(0x10001)
+    assert word.value == 0x0001
+    word = Word(0x11111)
+    assert word.value == 0x1111
+    word = Word(0xFFFFF)
+    assert word.value == 0xFFFF

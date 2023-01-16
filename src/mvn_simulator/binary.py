@@ -24,3 +24,20 @@ class Byte:
             (self.most_significant.value << 4)
             + self.least_significant.value
         )
+
+
+@dataclass
+class Word:
+    most_significant: Byte = field(init=False, compare=False)
+    least_significant: Byte = field(init=False, compare=False)
+
+    def __init__(self, value: int = 0x0000):
+        self.most_significant = Byte((value & 0xFF00) >> 8)
+        self.least_significant = Byte(value & 0x00FF)
+
+    @property
+    def value(self) -> int:
+        return (
+            (self.most_significant.value << 8)
+            + self.least_significant.value
+        )
