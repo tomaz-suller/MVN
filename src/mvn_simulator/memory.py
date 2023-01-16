@@ -1,4 +1,4 @@
-from . import address
+from . import memory_position
 from .utils import *
 
 MIN_ADDR = 0x0000
@@ -22,12 +22,14 @@ class Memory:
 
         self.map = []
         for cont in range(MAX_ADDR // 2):
-            self.map.append(address.Address(2 * cont, value // 0x100))
+            self.map.append(memory_position.MemoryPosition(2 * cont, value // 0x100))
             self.map.append(
-                address.Address(2 * cont + 1, value - (value // 0x100) * 0x100)
+                memory_position.MemoryPosition(
+                    2 * cont + 1, value - (value // 0x100) * 0x100
+                )
             )
-        self.map.append(address.Address(MAX_ADDR - 1, 0x0F))
-        self.map.append(address.Address(MAX_ADDR, 0xFC))
+        self.map.append(memory_position.MemoryPosition(MAX_ADDR - 1, 0x0F))
+        self.map.append(memory_position.MemoryPosition(MAX_ADDR, 0xFC))
 
     def get_value(self, addr):
         valid_value(addr, MIN_ADDR, MAX_ADDR)

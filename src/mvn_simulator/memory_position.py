@@ -1,7 +1,7 @@
 from .utils import MvnError
 
 
-class Address:
+class MemoryPosition:
     """
     This class is for an address in the memory, it is defined by
     one address number and one value contained in this address.
@@ -32,9 +32,7 @@ class Address:
         if 0x00 <= value_ <= 0xFF:
             self._value = value_
         else:
-            raise MvnError(
-                f"value {value_} too large to fit in a single memory address"
-            )
+            raise MvnError(f"value {value_} does not fit in a single memory address")
 
     def set_value(self, value: int):
         self.value = value
