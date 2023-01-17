@@ -1,6 +1,6 @@
-from .switchcase import switch, case
-from .utils import valid_instru, valid_value
 from .binary import Word
+from .switchcase import case, switch
+from .utils import valid_instru, valid_value
 
 MIN_VALUE = 0x0000
 MAX_VALUE = 0xFFFF
