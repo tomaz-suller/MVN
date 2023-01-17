@@ -1,8 +1,8 @@
 import pytest
 
-from src.mvn_simulator.memory import Memory
-from src.mvn_simulator.binary import Word
-from src.mvn_simulator.utils import MvnError
+from mvn_simulator.binary import Word
+from mvn_simulator.memory import Memory
+from mvn_simulator.utils import MvnError
 
 
 # _ is necessary so pytest doesn't detect this as a test class

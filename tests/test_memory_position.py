@@ -1,4 +1,4 @@
-from src.mvn_simulator.memory_position import MemoryPosition
+from mvn_simulator.memory_position import MemoryPosition
 
 
 def test_valid():

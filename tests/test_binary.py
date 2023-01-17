@@ -1,4 +1,4 @@
-from src.mvn_simulator.binary import Nibble, Byte, Word
+from mvn_simulator.binary import Byte, Nibble, Word
 
 
 def test_valid_nibble():

@@ -1,4 +1,4 @@
-from src.mvn_simulator.register import Register
+from mvn_simulator.register import Register
 
 
 def test_valid():
