@@ -66,7 +66,7 @@ class Memory(UserDict[int, Byte]):
                 + "\n"
                 + "-" * 71
             )
-            # TODO Refactor to iterate over lines and join line values
+            # FIXME Refactor to iterate over lines and join line values
             for address in range(first_address, last_address + 1):
                 if not address & 0xF:
                     # Last address nibble is in the columns

@@ -8,10 +8,11 @@ class MemoryPosition:
     It also contains to get address and value and to set the value
     """
 
+    _address: int
+    _content: Byte
+
     def __init__(self, address: int, value: int = 0x00):
         """Inicialize address and value"""
-        self._address: int = None
-        self._content: Byte = None
         self.address = address
         self.value = value
 

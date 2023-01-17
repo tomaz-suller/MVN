@@ -5,6 +5,7 @@ from src.mvn_simulator.binary import Word
 from src.mvn_simulator.utils import MvnError
 
 
+# _ is necessary so pytest doesn't detect this as a test class
 class _TestAccess:
     memory: Memory
     memory_content: dict[int, int]

@@ -7,6 +7,7 @@ class Register:
     own value.
     It also has methods to get and set this value
     """
+
     _value: Word
 
     def __init__(self, value: int = 0x0000):

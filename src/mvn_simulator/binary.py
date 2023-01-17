@@ -20,10 +20,7 @@ class Byte:
 
     @property
     def value(self) -> int:
-        return (
-            (self.most_significant.value << 4)
-            + self.least_significant.value
-        )
+        return (self.most_significant.value << 4) + self.least_significant.value
 
 
 @dataclass
@@ -37,7 +34,4 @@ class Word:
 
     @property
     def value(self) -> int:
-        return (
-            (self.most_significant.value << 8)
-            + self.least_significant.value
-        )
+        return (self.most_significant.value << 8) + self.least_significant.value
