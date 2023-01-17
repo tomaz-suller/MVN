@@ -1,5 +1,6 @@
-from .switchcase import *
-from .utils import *
+from .switchcase import switch, case
+from .utils import valid_instru, valid_value
+from .binary import Word
 
 MIN_VALUE = 0x0000
 MAX_VALUE = 0xFFFF
@@ -18,73 +19,89 @@ class Alu:
     to call the others.
     """
 
-    def __init__(self):
-        """Inicialize the LAU"""
-
-    def execute(self, op, ac, oi=0x0000):
+    # pylint: disable=too-many-return-statements
+    def execute(self, opcode: int, accumulator_value: int, immediate: int = 0x0000):
         """Check if the given instruction is valid and performs the
         right operation"""
 
-        valid_instru(op)
-        valid_value(ac, MIN_VALUE, MAX_VALUE)
-        valid_value(oi, MIN_VALUE, MAX_VALUE)
-        switch(op)
+        valid_instru(opcode)
+        valid_value(accumulator_value, MIN_VALUE, MAX_VALUE)
+        valid_value(immediate, MIN_VALUE, MAX_VALUE)
+
+        switch(opcode)
         if case(1):
-            return self.is_zero(ac)
+            return self.is_zero(accumulator_value)
         if case(2):
-            return self.is_neg(ac)
+            return self.is_negative(accumulator_value)
         if case(4):
-            return self.add(ac, oi)
+            return self.add(accumulator_value, immediate)
         if case(5):
-            return self.sub(ac, oi)
+            return self.subtract(accumulator_value, immediate)
         if case(6):
-            return self.mul(ac, oi)
+            return self.multiply(accumulator_value, immediate)
         if case(7):
-            return self.div(ac, oi)
+            return self.divide(accumulator_value, immediate)
         if case(0xA):
-            return self._not(ac)
+            return self.not_(accumulator_value)
         if case(0xB):
-            return self._and(ac, oi)
+            return self.and_(accumulator_value, immediate)
         if case(0xC):
-            return self._or(ac, oi)
+            return self.or_(accumulator_value, immediate)
         if case(0xD):
-            return self._xor(ac, oi)
+            return self.xor(accumulator_value, immediate)
+        return None
 
-    def is_zero(self, num):
-        return num == 0x0000
+    @staticmethod
+    def is_zero(operand: int) -> bool:
+        return operand == 0x0000
 
-    def is_neg(self, num):
-        return num >= 0x8000
+    @staticmethod
+    def is_negative(operand: int) -> bool:
+        return bool(operand & (1 << 15))
 
-    def add(self, num1, num2):
-        return (num1 + num2) % (1 << 16)
+    @staticmethod
+    def add(a: int, b: int) -> int:
+        return Alu._truncate(a + b)
 
-    def sub(self, num1, num2):
-        return (num1 - num2) % (1 << 16)
+    @staticmethod
+    def subtract(a: int, b: int) -> int:
+        return Alu._truncate(a - b)
 
-    def mul(self, num1, num2):
-        return (num1 * num2) % (1 << 16)
+    @staticmethod
+    def multiply(a: int, b: int) -> int:
+        return Alu._truncate(a * b)
 
-    def div(self, num1, num2):
-        signal = False
-        if self.is_neg(num1):
-            num1 = self.mul(num1, 0xFFFF)
-            signal = not signal
-        if self.is_neg(num2):
-            num2 = self.mul(num2, 0xFFFF)
-            signal = not signal
-        if signal:
-            return self.mul(num1 // num2, 0xFFFF)
-        return num1 // num2
+    @staticmethod
+    def divide(a, b):
+        sign = +1
+        if Alu.is_negative(a):
+            a = Alu._opposite(a)
+            sign *= -1
+        if Alu.is_negative(b):
+            b = Alu._opposite(b)
+            sign *= -1
+        return Alu._truncate(sign * int(a / b))
 
-    def _not(self, num):
-        return num ^ 0xFFFF
+    @staticmethod
+    def not_(a):
+        return Alu._truncate(Alu.xor(a, -1))
 
-    def _and(self, num1, num2):
-        return num1 & num2
+    @staticmethod
+    def and_(a, b):
+        return Alu._truncate(a & b)
 
-    def _or(self, num1, num2):
-        return num1 | num2
+    @staticmethod
+    def or_(a, b):
+        return Alu._truncate(a | b)
 
-    def _xor(self, num1, num2):
-        return num1 ^ num2
+    @staticmethod
+    def xor(a, b):
+        return Alu._truncate(a ^ b)
+
+    @staticmethod
+    def _truncate(a: int) -> int:
+        return Word(a).value
+
+    @staticmethod
+    def _opposite(a: int) -> int:
+        return Alu._truncate(Alu.not_(a) + 1)

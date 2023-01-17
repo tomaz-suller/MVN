@@ -69,10 +69,13 @@ dependencies = [
 cov = "pytest --cov-report=term-missing --cov-config=pyproject.toml --cov=src/mvn_simulator --cov=tests {args}"
 no-cov = "cov --no-cov {args}"
 
-[tools.pylint.format]
+[tool.pylint.format]
 max-line-length = "88"
 
-[tools.isort]
+[tool.pylint.basic]
+good-names = ["i", "j", "k", "a", "b", "_"]
+
+[tool.isort]
 profile = "black"
 
 [tool.coverage.run]
