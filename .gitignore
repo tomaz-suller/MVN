@@ -1,6 +1,7 @@
 .vscode
 
 ## MVN
+.env
 *.asm
 *.lst
 *.mvn

@@ -24,7 +24,9 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
-dependencies = []
+dependencies = [
+  "python-dotenv",
+]
 dynamic = ["version"]
 
 [project.urls]
@@ -37,12 +39,41 @@ path = "src/mvn_simulator/__about__.py"
 
 [tool.hatch.envs.default]
 dependencies = [
+  "pylint",
+  "flake8",
+  "black",
+  "isort",
+]
+[tool.hatch.envs.default.scripts]
+lint = [
+  "flake8 src",
+  "pylint src",
+]
+check = [
+  "black --check --diff src",
+  "isort --check-only --diff src",
+  "lint",
+]
+fmt = [
+  "isort src",
+  "black src",
+]
+
+[tool.hatch.envs.test]
+dependencies = [
+  "coverage[toml]",
   "pytest",
   "pytest-cov",
 ]
-[tool.hatch.envs.default.scripts]
-cov = "pytest --cov-report=term-missing --cov-config=pyproject.toml --cov=mvn_simulator --cov=tests {args}"
+[tool.hatch.envs.test.scripts]
+cov = "pytest --cov-report=term-missing --cov-config=pyproject.toml --cov=src/mvn_simulator --cov=tests {args}"
 no-cov = "cov --no-cov {args}"
+
+[tools.pylint.format]
+max-line-length = "88"
+
+[tools.isort]
+profile = "black"
 
 [tool.coverage.run]
 branch = true
