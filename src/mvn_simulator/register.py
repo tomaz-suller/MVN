@@ -1,7 +1,4 @@
-from .utils import *
-
-MIN_VALUE = 0x0000
-MAX_VALUE = 0xFFFF
+from .binary import Word
 
 
 class Register:
@@ -10,14 +7,21 @@ class Register:
     own value.
     It also has methods to get and set this value
     """
+    _value: Word
 
-    def __init__(self, value=0x00):
-        """Inicialize the register with value"""
-        valid_value(value, MIN_VALUE, MAX_VALUE)
+    def __init__(self, value: int = 0x0000):
+        """Initialize the register with value"""
         self.value = value
 
+    @property
+    def value(self) -> int:
+        return self._value.value
+
+    @value.setter
+    def value(self, value: int) -> None:
+        self._value = Word(value)
+
     def set_value(self, value):
-        valid_value(value, MIN_VALUE, MAX_VALUE)
         self.value = value
 
     def get_value(self):
