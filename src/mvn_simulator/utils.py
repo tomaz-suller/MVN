@@ -6,6 +6,11 @@ class MvnError(Exception):
     """Error class"""
 
 
+def hex_zfill(value: int, width: int, upper: bool = True) -> str:
+    string = hex(value)[2:].zfill(width)
+    return string.upper() if upper else string
+
+
 def valid_value(num, MIN, MAX):
     """Test if argument is between MIN and MAX, raise error"""
     if not (MIN <= num and num <= MAX):

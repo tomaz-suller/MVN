@@ -1,104 +1,88 @@
-from . import memory_position
-from .utils import *
+from collections import UserDict
+from pathlib import Path
+import io
 
-MIN_ADDR = 0x0000
-MAX_ADDR = 0x0FFF
-MIN_VALUE = 0x0000
-MAX_VALUE = 0xFFFF
+from .binary import Byte, Word
+from .utils import MvnError, hex_zfill
 
 
-class Memory:
+class Memory(UserDict[int, Byte]):
     """
     This class represents the memory of the MVN, it has an
     collection of addresses that vary from 0x0000 to 0xFFFF.
     It contains methods to get, set and print those values.
     """
 
-    MEMORY_SIZE_IN_BYTES: int = 0xFFF + 2  # Addresses vary from 0x0..=0xFFF
+    LAST_MEMORY_ADDRESS: int = 0xFFF  # Addresses vary from 0x0..=0xFFF
 
-    def __init__(self, value: int = 0):
-        """Initialize the memory with the value in the argument
-        (default 0x0) in every position"""
+    def _check_address(self, address: int) -> None:
+        if 0x000 <= address <= self.LAST_MEMORY_ADDRESS:
+            return
+        raise MvnError(
+            f"address {self._format_address(address)} cannot be accessed; "
+            f"addresses vary from 0 to {self.LAST_MEMORY_ADDRESS}"
+        )
 
-        self.map = []
-        for cont in range(MAX_ADDR // 2):
-            self.map.append(memory_position.MemoryPosition(2 * cont, value // 0x100))
-            self.map.append(
-                memory_position.MemoryPosition(
-                    2 * cont + 1, value - (value // 0x100) * 0x100
-                )
+    def __getitem__(self, key: int) -> Byte:
+        self._check_address(key)
+        return self.data.get(key, Byte(0))
+
+    def __setitem__(self, key: int, item: Byte) -> None:
+        self._check_address(key)
+        return super().__setitem__(key, item)
+
+    def get_value(self, address: int) -> int:
+        try:
+            self._check_address(address)
+            self._check_address(address + 1)
+        except MvnError as error:
+            raise MvnError(
+                f"aligned access to address {self._format_address(address)} failed"
+            ) from error
+        return (self[address].value << 8) + self[address + 1].value
+
+    def set_value(self, address: int, value: int) -> None:
+        value_word = Word(value)
+        try:
+            self._check_address(address)
+            self[address] = value_word.most_significant
+            self._check_address(address + 1)
+            self[address + 1] = value_word.least_significant
+        except MvnError as error:
+            raise MvnError(
+                f"aligned assignment to address {self._format_address(address)} failed"
+            ) from error
+
+    def show(self, first_address: int, last_address: int, filepath: Path = None):
+        self._check_address(first_address)
+        self._check_address(last_address)
+        if first_address > last_address:
+            raise MvnError("Incompatible values")
+
+        with io.StringIO() as buffer:
+            buffer.write(
+                "       "
+                + "  ".join((hex_zfill(i, 2) for i in range(0x10)))
+                + "\n"
+                + "-" * 71
             )
-        self.map.append(memory_position.MemoryPosition(MAX_ADDR - 1, 0x0F))
-        self.map.append(memory_position.MemoryPosition(MAX_ADDR, 0xFC))
-
-    def get_value(self, addr):
-        valid_value(addr, MIN_ADDR, MAX_ADDR)
-        return self.map[addr].get_value() * 0x100 + self.map[addr + 1].get_value()
-
-    def set_value(self, addr, value):
-        valid_value(addr, MIN_ADDR, MAX_ADDR)
-        valid_value(value, MIN_VALUE, MAX_VALUE)
-        self.map[addr].set_value(value // 0x100)
-        self.map[addr + 1].set_value(value - (value // 0x100) * 0x100)
-
-    def show(self, start, stop, arq):
-        valid_value(start, MIN_ADDR, MAX_ADDR)
-        valid_value(stop, MIN_ADDR, MAX_ADDR)
-        if start > stop:
-            raise MvnError("Uncompatible values")
-        if arq is not None:
-            file = open(arq, "w")
-        else:
-            print(
-                "       00  01  02  03  04  05  06  07  08  09  0A  0B  0C  0D  0E  0F  "
-            )
-            print(
-                "-----------------------------------------------------------------------"
-            )
-        line = hex(start // 0x0010)[2:].zfill(3) + "0:  " + "    " * (start % 0x0010)
-        current_line = start // 0x0010
-        current_index = start - current_line * 0x0010
-        final_line = stop // 0x0010
-        final_index = stop - final_line * 0x0010
-        if current_line == final_line:
-            while current_index <= final_index:
-                line += (
-                    hex(self.map[current_line * 0x0010 + current_index].get_value())[
-                        2:
-                    ].zfill(2)
-                    + "  "
-                )
-                current_index += 1
-            if arq is not None:
-                file.write(line + "\n")
-            else:
-                print(line)
-        else:
-            while current_line < final_line:
-                while current_index <= 0xF:
-                    line += (
-                        hex(
-                            self.map[current_line * 0x0010 + current_index].get_value()
-                        )[2:].zfill(2)
-                        + "  "
+            # TODO Refactor to iterate over lines and join line values
+            for address in range(first_address, last_address + 1):
+                if not address & 0xF:
+                    # Last address nibble is in the columns
+                    address_but_last_nibble = address & 0xFFF0
+                    buffer.write(
+                        "\n" + hex_zfill(address_but_last_nibble & 0xFFF0, 4) + ":  "
                     )
-                    current_index += 1
-                if arq is not None:
-                    file.write(line + "\n")
-                else:
-                    print(line)
-                current_line += 1
-                current_index = 0
-                line = hex(current_line)[2:].zfill(3) + "0:  "
-            while current_index <= final_index:
-                line += (
-                    hex(self.map[current_line * 0x0010 + current_index].get_value())[
-                        2:
-                    ].zfill(2)
-                    + "  "
-                )
-                current_index += 1
-            if arq is not None:
-                file.write(line + "\nFinal do dump.")
-            else:
-                print(line)
+                buffer.write(hex_zfill(self[address].value, 2) + " " * 2)
+            text = buffer.getvalue()
+
+        if filepath is not None:
+            with open(filepath, "w", encoding="utf8") as file:
+                file.write(text)
+        else:
+            print(text)
+
+    @staticmethod
+    def _format_address(address: int) -> str:
+        return f"0x{address:04X}"
