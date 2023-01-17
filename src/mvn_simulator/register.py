@@ -22,8 +22,8 @@ class Register:
     def value(self, value: int) -> None:
         self._value = Word(value)
 
-    def set_value(self, value):
+    def set_value(self, value: int) -> None:
         self.value = value
 
-    def get_value(self):
+    def get_value(self) -> int:
         return self.value
