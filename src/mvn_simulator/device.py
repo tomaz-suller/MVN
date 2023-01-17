@@ -2,8 +2,8 @@ import select
 import subprocess
 import sys
 
-from .utils import *
 from .switchcase import *
+from .utils import *
 
 MIN_VALUE = 0x0000
 MAX_VALUE = 0xFFFF

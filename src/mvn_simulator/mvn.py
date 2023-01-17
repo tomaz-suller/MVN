@@ -1,8 +1,8 @@
 import time
 
 from . import alu, device, memory, register
-from .utils import *
 from .switchcase import *
+from .utils import *
 
 
 class Mvn:

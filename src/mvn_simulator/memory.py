@@ -1,6 +1,6 @@
+import io
 from collections import UserDict
 from pathlib import Path
-import io
 
 from .binary import Byte, Word
 from .utils import MvnError, hex_zfill

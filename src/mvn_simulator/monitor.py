@@ -1,11 +1,10 @@
-import os.path
 import argparse
+import os.path
 
-from .mvn import Mvn
-from .utils import *
-from .switchcase import *
 from .c3po import C3po
-
+from .mvn import Mvn
+from .switchcase import *
+from .utils import *
 
 parser = argparse.ArgumentParser(description="MVN execution parameters")
 parser.add_argument(
