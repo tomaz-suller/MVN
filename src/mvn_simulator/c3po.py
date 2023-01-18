@@ -1,3 +1,5 @@
+# flake8: noqa
+# pylint: skip-file
 class C3po:
     def __init__(self, language):
         if language not in ["en", "pt", "es", "tl"]:
