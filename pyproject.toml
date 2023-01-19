@@ -46,17 +46,17 @@ dependencies = [
 ]
 [tool.hatch.envs.default.scripts]
 lint = [
-  "flake8 src",
-  "pylint src",
+  "flake8 src tests",
+  "pylint src tests",
 ]
 check = [
-  "black --check --diff src",
-  "isort --check-only --diff src",
+  "black --check --diff src tests",
+  "isort --check-only --diff src tests",
   "lint",
 ]
 fmt = [
-  "isort src",
-  "black src",
+  "isort src tests",
+  "black src tests",
 ]
 
 [tool.hatch.envs.test]
