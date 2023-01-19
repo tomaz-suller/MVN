@@ -408,6 +408,6 @@ while True:
         # Exit terminal
         elif case("x"):
             for dev in mvn.devs:
-                dev.terminate()
+                dev.close()
             print(c3po("end"))
             exit()

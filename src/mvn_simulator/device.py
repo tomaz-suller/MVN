@@ -1,12 +1,67 @@
-import select
-import subprocess
-import sys
+import signal
+from dataclasses import dataclass
+from enum import Enum, IntEnum
+from pathlib import Path
 
-from .switchcase import *
-from .utils import *
+from .binary import Word
+from .utils import MvnError
 
 MIN_VALUE = 0x0000
 MAX_VALUE = 0xFFFF
+
+
+class DeviceType(IntEnum):
+    KEYBOARD = 0
+    DISPLAY = 1
+    PRINTER = 2  # Deprecated, does nothing and should not be used
+    DISK = 3
+
+
+class DeviceMode(str, Enum):
+    NONE = ""
+    READ = "l"
+    WRITE = "e"
+
+    # TODO Consider using or removing
+    @property
+    def open_mode(self) -> str:
+        if self == DeviceMode.READ:
+            return "r"
+        if self == DeviceMode.WRITE:
+            return "wb"
+        raise ValueError("device mode doesn't allow opening files")
+
+
+@dataclass
+class DeviceConfig:
+    type: DeviceType
+    identifier: int
+    mode: DeviceMode = DeviceMode.NONE
+
+    # TODO Implement
+    # @staticmethod
+    # def parse(config: str) -> "DeviceConfig":
+    #     ...
+
+    @property
+    def is_readable(self):
+        return self.type == DeviceType.KEYBOARD or (
+            self.type == DeviceType.DISK and self.mode == DeviceMode.READ
+        )
+
+    @property
+    def is_writable(self):
+        return (
+            self.type == DeviceType.DISPLAY
+            or self.type == DeviceType.PRINTER
+            or (self.type == DeviceType.DISK and self.mode == DeviceMode.WRITE)
+        )
+
+    @property
+    def has_buffer(self):
+        return self.type == DeviceType.KEYBOARD or (
+            self.type == DeviceType.DISK and self.mode == DeviceMode.READ
+        )
 
 
 class Device:
@@ -19,154 +74,150 @@ class Device:
     UC, to print the possible devices and to terminate it.
     """
 
-    def __init__(self, dtype, UC, file=None, rwb=None, printer=None, quiet=False):
-        """Inicialize the device given the type, the UC and other
-        convinient parameters"""
+    _config: DeviceConfig
+    quiet: bool
+    filepath: Path
+    buffer: list[str]
 
-        valid_type(dtype)
-        self.dtype = dtype
-        self.UC = UC
+    # TODO Implement
+    # @staticmethod
+    # def from_config_string(config: str) -> "Device":
+    #     ...
+
+    # TODO Implement
+    # @staticmethod
+    # def from_config_values(type_: DeviceType, mode: DeviceMode, identifier: int) -> "Device":
+    #     config = DeviceConfig(type, mode, identifier)
+    #     ...
+
+    def __init__(
+        self,
+        in_type: int,
+        identifier: int,
+        in_mode: str = DeviceMode.NONE,
+        filepath: Path | None = None,
+        printer=None,
+        quiet: bool = False,
+    ):
+        type_ = DeviceType(in_type)
+        mode = DeviceMode(in_mode)
+        self._config = DeviceConfig(type_, identifier, mode)
         self.quiet = quiet
-        self.rwb = rwb
 
-        if self.dtype == 3:
-            valid_rwb(rwb)
-            switch(rwb)
-            if case("e"):
-                self.file_write = open(file, "wb")
-                self.file_read = None
-            elif case("l"):
-                valid_file(file)
-                self.file_write = None
-                self.file_read = open(file, "rb")
-                self.buffer = self.file_read.read()
-                self.counter = 0
-                self.file = file
-        elif self.dtype == 2:
-            valid_printer(printer)
-            self.printer = printer
-        elif self.dtype == 0:
+        self.buffer = []
+        self.filepath = filepath  # FIXME Remove linter warning
+
+        if self._config.type == DeviceType.DISK:
+            assert self.filepath is not None
+            assert self._config.mode != DeviceMode.NONE
+            if self._config.mode == DeviceMode.READ:
+                self._read_file_into_buffer()
+        elif self._config.type == DeviceType.PRINTER:
+            pass
+        elif self._config.type == DeviceType.KEYBOARD:
             self.buffer = []
 
+    @property
+    def type(self) -> DeviceType:
+        return self._config.type
+
+    @property
+    def mode(self) -> DeviceMode:
+        return self._config.mode
+
+    @property
+    def identifier(self) -> int:
+        return self._config.identifier
+
     def is_readable(self):
-        """Return True weather the device is readable"""
-        return self.dtype == 0 or (self.dtype == 3 and self.file_read is not None)
+        return self._config.is_readable
 
     def is_writable(self):
-        """Return True weather the device is writable"""
-        return (
-            self.dtype == 1
-            or self.dtype == 2
-            or self.dtype == 3
-            and self.file_write is not None
-        )
+        return self._config.is_writable
 
     def has_buffer(self):
-        """Return True weather the device has buffer"""
-        return self.dtype == 0 or (self.dtype == 3 and self.rwb != "e")
+        return self._config.has_buffer
 
-    def get_data(self, limit):
+    def get_data(self, keyboard_timeout_seconds: int = 0) -> int:
         """Get data from the device and return it, the limit to be
         returned is one byte (or two nibbles)"""
 
-        if not self.is_readable():
-            raise MvnError("Unreadable device")
-        switch(self.dtype)
-        if case(0):
-            if len(self.buffer) < 2:
-                if limit == None:
-                    read = input()
-                    for nibble in read:
-                        self.buffer.append(ord(nibble))
-                    self.buffer.append(ord("\n"))
-                else:
-                    read, o, e = select.select([sys.stdin], [], [], limit / 1000)
-                    if read:
-                        for nibble in sys.stdin.readline().strip():
-                            self.buffer.append(ord(nibble))
-                    else:
-                        if self.quiet:
-                            print("Not enough data on buffer, returning 0x0000")
-                        return 0x0000
-                    self.buffer.append(ord("\n"))
-            if len(self.buffer) > 1:
-                return self.buffer.pop(0) * 0x0100 + self.buffer.pop(0)
-            else:
-                if self.quiet:
-                    print("Not enough data on buffer, returning 0x0000")
-                return 0x0000
-        elif case(3):
-            if self.counter + 2 > len(self.buffer):
-                if self.quiet:
-                    print("No more data to get, returning 0x0000")
-                return 0x0000
-            else:
-                self.counter += 2
-                return (
-                    self.buffer[self.counter - 2] * 0x0100
-                    + self.buffer[self.counter - 1]
-                )
+        msb = 0
+        lsb = 0
 
-    def put_data(self, value):
+        if not self.is_readable():
+            raise MvnError(f"Unreadable device {self._config.type.name}")
+
+        if self._config.type == DeviceType.KEYBOARD and len(self.buffer) < 2:
+            try:
+                self.buffer.extend(self._timeout_input(keyboard_timeout_seconds))
+            except TimeoutError:
+                pass
+            except EOFError:
+                # TODO Assess what is the expected behaviour in this case
+                pass
+
+        # Values are stored as characters in the internal buffer, so we need
+        # to convert them to their integer values using `ord`
+        if len(self.buffer) >= 1:
+            msb = ord(self.buffer.pop(0))
+            if len(self.buffer) >= 1:
+                lsb = ord(self.buffer.pop(0))
+
+        return (msb << 8) + lsb
+
+    @staticmethod
+    def _timeout_input(seconds: int = 0) -> str:
+        def timeout(signal_number, stack_frame) -> None:
+            raise TimeoutError("Time limit exceeded")
+
+        signal.signal(signal.SIGALRM, timeout)
+
+        signal.alarm(seconds)
+        keyboard_input = input()
+        signal.alarm(0)  # Disables alarm if input is received in time
+        return keyboard_input
+
+    def put_data(self, value: int) -> None:
         """Put given data to the device, the limit to be put is one
         byte (or two nibbles)"""
 
         if not self.is_writable():
             raise MvnError("Unwritable device")
-        valid_value(value, MIN_VALUE, MAX_VALUE)
-        switch(self.dtype)
-        if case(1):
-            print(chr(value // 0x0100) + chr(value % 0x0100))
-        elif case(2):
-            out = open("will_print.txt", "rb")
-            out.write(value // 0x0100)
-            out.write(value % 0x0100)
-            subprocess.run("lpr -P " + self.printer + " will_print.txt")
-            subprocess.run("rm will_print.txt")
-        elif case(3):
-            self.file_write.write((value // 0x0100).to_bytes(1, byteorder="big"))
-            self.file_write.write((value % 0x0100).to_bytes(1, byteorder="big"))
-            self.file_write.flush()
 
-    def append_buffer(self):
-        if not self.is_readable() or self.dtype != 3:
+        word = Word(value)
+
+        if self._config.type == DeviceType.DISPLAY:
+            print(word.as_ascii())
+        elif self._config.type == DeviceType.PRINTER:
+            pass
+        elif self._config.type == DeviceType.DISK:
+            with open(self.filepath, "ab") as file:
+                file.write(word.value.to_bytes(2, byteorder="big"))
+
+    def append_buffer(self) -> None:
+        if not self.is_readable() or self.type != 3:
             raise MvnError("Unreadable device")
-        self.file_read.close()
-        self.file_read = open(self.file, "rb")
-        self.buffer = self.file_read.read()
+        self._read_file_into_buffer()
 
-    def clean_buffer(self):
+    def clean_buffer(self) -> None:
         if not self.has_buffer():
             raise MvnError("No buffer to be cleaned")
-        switch(self.dtype)
-        if case(0):
-            self.buffer = []
-        elif case(3):
-            self.buffer = ""
-            self.counter = 0
+        self.buffer = []
 
-    def terminate(self):
-        """Ends up the device"""
-        if self.dtype == 3:
-            try:
-                self.file_write.close()
-            except:
-                pass
+    def close(self) -> None:
+        pass
 
-            try:
-                self.file_read.close()
-            except:
-                pass
-
-    def get_type(self):
+    def get_type(self) -> int:
         """Return device type"""
-        return self.dtype
+        return self.type
 
-    def get_UC(self):
+    def get_uc(self) -> int:
         """Return device UC"""
-        return self.UC
+        return self.identifier
 
-    def show_available(self):
+    @staticmethod
+    def show_available() -> None:
         """Print the possible devices"""
         print("Tipos de dispositivos disponíveis:")
         print("   Teclado    -> 0")
@@ -174,5 +225,6 @@ class Device:
         print("   Impressora -> 2")
         print("   Disco      -> 3")
 
-
-# Easter eggs taken from https://www.oocities.org/spunk1111/easter.htm
+    def _read_file_into_buffer(self) -> None:
+        with open(self.filepath, "r", encoding="ascii") as file:
+            self.buffer.extend(file.read())

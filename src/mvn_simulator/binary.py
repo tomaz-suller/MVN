@@ -35,3 +35,6 @@ class Word:
     @property
     def value(self) -> int:
         return (self.most_significant.value << 8) + self.least_significant.value
+
+    def as_ascii(self) -> str:
+        return chr(self.most_significant.value) + chr(self.least_significant.value)

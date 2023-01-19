@@ -15,6 +15,8 @@ class Mvn:
     remove and show devices
     """
 
+    devs: list[device.Device]
+
     def __init__(
         self, timeInterrupt=False, time_limit=50, timeout_input=0, quiet=False
     ):
@@ -211,7 +213,7 @@ class Mvn:
         for dev in self.devs:
             if (
                 self.OI.get_value() // 0x0100 == dev.get_type()
-                and self.OI.get_value() % 0x0100 == dev.get_UC()
+                and self.OI.get_value() % 0x0100 == dev.get_uc()
             ):
                 self.AC.set_value(dev.get_data(self.TIMEOUT))
                 nfound = False
@@ -228,7 +230,7 @@ class Mvn:
         for dev in self.devs:
             if (
                 self.OI.get_value() // 0x0100 == dev.get_type()
-                and self.OI.get_value() % 0x0100 == dev.get_UC()
+                and self.OI.get_value() % 0x0100 == dev.get_uc()
             ):
                 dev.put_data(self.AC.get_value())
                 nfound += 1
@@ -381,7 +383,7 @@ class Mvn:
             for dev in self.devs:
                 if (
                     self.MDR.get_value() // 0x0100 == dev.get_type()
-                    and self.MDR.get_value() % 0x0100 == dev.get_UC()
+                    and self.MDR.get_value() % 0x0100 == dev.get_uc()
                 ):
                     nfound = False
                     break
@@ -476,7 +478,7 @@ class Mvn:
                 "  "
                 + str(dev.get_type())
                 + "    "
-                + str(dev.get_UC()).zfill(2)
+                + str(dev.get_uc()).zfill(2)
                 + "   "
                 + translate[str(dev.get_type())]
             )
@@ -488,14 +490,14 @@ class Mvn:
     # Add a new device with specified parameters
     def new_dev(self, dtype, UC, file=None, rwb=None, printer=None):
         for dev in self.devs:
-            if dev.get_type() == dtype and dev.get_UC() == UC:
+            if dev.get_type() == dtype and dev.get_uc() == UC:
                 raise MvnError("Device ja existe")
         self.devs.append(device.Device(dtype, UC, file, rwb, printer, self.quiet))
 
     # Remove specified device
     def rm_dev(self, dtype, UC):
         for dev in range(len(self.devs)):
-            if self.devs[dev].get_type() == dtype and self.devs[dev].get_UC() == UC:
-                self.devs[dev].terminate()
+            if self.devs[dev].get_type() == dtype and self.devs[dev].get_uc() == UC:
+                self.devs[dev].close()
                 self.devs.pop(dev)
                 return
