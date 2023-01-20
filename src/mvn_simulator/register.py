@@ -22,6 +22,14 @@ class Register:
     def value(self, value: int) -> None:
         self._value = Word(value)
 
+    @property
+    def most_significant(self) -> int:
+        return self._value.most_significant.value
+
+    @property
+    def least_significant(self) -> int:
+        return self._value.least_significant.value
+
     def set_value(self, value: int) -> None:
         self.value = value
 

@@ -28,3 +28,13 @@ def test_setter_overflow():
     register = Register(0)
     register.value = 0x10000
     assert register.value == 0
+
+
+def test_most_significant_byte():
+    register = Register(0xFF0F)
+    assert register.most_significant == 0xFF
+
+
+def test_least_significant_byte():
+    register = Register(0xFF0F)
+    assert register.least_significant == 0x0F
