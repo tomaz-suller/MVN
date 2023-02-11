@@ -94,9 +94,9 @@ class Device:
         self,
         in_type: int,
         identifier: int,
-        in_mode: str = DeviceMode.NONE,
         filepath: Path | None = None,
-        printer=None,
+        in_mode: str = DeviceMode.NONE,
+        printer=None,  # FIXME Deprecated, should be removed completely
         quiet: bool = False,
     ):
         type_ = DeviceType(in_type)

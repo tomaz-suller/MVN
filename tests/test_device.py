@@ -66,7 +66,7 @@ class TestDevice:
 
     @staticmethod
     def disk(mode: DeviceMode, filepath: Path) -> Device:
-        return Device(DeviceType.DISK, 0, mode, filepath=filepath)
+        return Device(DeviceType.DISK, 0, in_mode=mode, filepath=filepath)
 
     @staticmethod
     @pytest.fixture
@@ -101,7 +101,7 @@ class TestDevice:
             "mode_str,mode", [("e", DeviceMode.WRITE), ("l", DeviceMode.READ)]
         )
         def test_valid_disk(self, mode_str: str, mode: DeviceMode, filepath: Path):
-            device = Device(3, 0, mode_str, filepath=filepath)
+            device = Device(3, 0, in_mode=mode_str, filepath=filepath)
             assert device.type == DeviceType.DISK
             assert device.identifier == 0
             assert device.mode == mode
