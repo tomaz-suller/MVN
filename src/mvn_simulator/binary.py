@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 
 
+# TODO Remove Nibble and store value directly on Byte
 @dataclass
 class Nibble:
     value: int = 0x0

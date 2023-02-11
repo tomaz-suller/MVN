@@ -45,8 +45,8 @@ class Memory(UserDict[int, Byte]):
         value_word = Word(value)
         try:
             self._check_address(address)
-            self[address] = value_word.most_significant
             self._check_address(address + 1)
+            self[address] = value_word.most_significant
             self[address + 1] = value_word.least_significant
         except MvnError as error:
             raise MvnError(
