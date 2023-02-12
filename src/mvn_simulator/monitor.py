@@ -148,6 +148,7 @@ class Monitor:
     ) -> None:
         if not self._program_loaded:
             raise MvnError("cannot start execution with no loaded program")
+        self._should_continue = True
         # TODO Refactor simulator to encapsulate initial address config
         self.simulator.IC.set_value(initial_address)
         steps = 0
