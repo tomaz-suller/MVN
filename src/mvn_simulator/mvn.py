@@ -67,7 +67,7 @@ class Mvn:
         self.OI.set_value(self.IR.get_value() - 0x1000 * self.OP.get_value())
         self.nsteps += 1
 
-    def execute(self):
+    def execute(self) -> bool:
         """Make different actions dependind on OP and return False if OP is
         Halt Machine.
         If OP is logic or arithmetic calls ULA to do it"""
@@ -410,7 +410,7 @@ class Mvn:
             str(expected) + " arguments expecteds, " + str(passed) + " passed."
         )
 
-    def print_state(self):
+    def state_str(self):
         return (
             hex(self.MAR.get_value())[2:].zfill(4)
             + " "
