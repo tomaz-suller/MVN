@@ -149,6 +149,8 @@ class Monitor:
         while self._should_continue:
             self.step()
             steps += 1
+            if steps > self.step_limit:
+                self._should_continue = False
             if print_registers:
                 if steps == 1:
                     self.print_register_heading()
