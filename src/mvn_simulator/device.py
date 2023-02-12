@@ -74,7 +74,7 @@ class Device:
     _config: DeviceConfig
     quiet: bool
     filepath: Path
-    buffer: list[str]
+    buffer: list[int]
 
     # TODO Implement
     # @staticmethod
@@ -155,17 +155,15 @@ class Device:
                 # TODO Assess what is the expected behaviour in this case
                 pass
 
-        # Values are stored as characters in the internal buffer, so we need
-        # to convert them to their integer values using `ord`
         if len(self.buffer) >= 1:
-            msb = ord(self.buffer.pop(0))
+            msb = self.buffer.pop(0)
             if len(self.buffer) >= 1:
-                lsb = ord(self.buffer.pop(0))
+                lsb = self.buffer.pop(0)
 
         return (msb << 8) + lsb
 
     @staticmethod
-    def _timeout_input(seconds: int = 0) -> str:
+    def _timeout_input(seconds: int = 0) -> bytes:
         def timeout(signal_number, stack_frame) -> None:
             raise TimeoutError("Time limit exceeded")
 
@@ -174,7 +172,7 @@ class Device:
         signal.alarm(seconds)
         keyboard_input = input()
         signal.alarm(0)  # Disables alarm if input is received in time
-        return keyboard_input
+        return keyboard_input.encode("ascii")
 
     def put_data(self, value: int) -> None:
         """Put given data to the device, the limit to be put is one
@@ -224,5 +222,5 @@ class Device:
         print("   Disco      -> 3")
 
     def _read_file_into_buffer(self) -> None:
-        with open(self.filepath, "r", encoding="ascii") as file:
+        with open(self.filepath, "rb") as file:
             self.buffer.extend(file.read())
