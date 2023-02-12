@@ -64,7 +64,7 @@ class MonitorCode:
 class Monitor:
     simulator: Mvn
     device_config_path: Path = Path("disp.lst")
-    _simulator_args: list
+    _simulator_args: tuple
     _should_continue: bool = True
     _program_loaded: bool = False
 
