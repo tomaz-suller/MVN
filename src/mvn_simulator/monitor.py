@@ -115,8 +115,12 @@ class Monitor:
 
         with open(filepath, encoding='utf8') as f:
             machine_program = [
-                remove_comment_from_line(line).split()
-                for line in f.readlines()
+                line
+                for line in (
+                    remove_comment_from_line(raw_line).split()
+                    for raw_line in f.readlines()
+                    if raw_line
+                )
                 if line
             ]
 
@@ -127,6 +131,7 @@ class Monitor:
             )
 
         self.simulator.set_memory(machine_program)
+        self._program_loaded = True
 
     def run(self, initial_address: int, print_registers: bool, step_by_step: bool) -> None:
         if not self._program_loaded:
