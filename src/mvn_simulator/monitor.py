@@ -69,6 +69,8 @@ class Monitor:
     _should_continue: bool = True
     _program_loaded: bool = False
 
+    _REGISTER_HEADING_INTERVAL: int = 20
+
     def __init__(self, step_limit: int, *simulator_args):
         self.simulator = Mvn(*simulator_args)
         self.step_limit = step_limit
@@ -152,7 +154,7 @@ class Monitor:
             if steps > self.step_limit:
                 self._should_continue = False
             if print_registers:
-                if steps == 1:
+                if steps % self._REGISTER_HEADING_INTERVAL == 1:
                     self.print_register_heading()
                 print(self.simulator.state_str())
                 if step_by_step:
