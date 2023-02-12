@@ -14,6 +14,10 @@ def remove_comment_from_line(line: str) -> str:
     return line.split(COMMENT_DELIMITER)[0].strip()
 
 
+def yes_to_bool(string: str) -> bool:
+    return string.lower() in ['y', 'yes', 'sim', 's']
+
+
 @unique
 class MonitorOperation(str, Enum):
     RESET_SIMULATOR = 'i'
@@ -47,8 +51,8 @@ class MonitorCode:
         if self.operation == MonitorOperation.EXECUTE_PROGRAM:
             arguments = [
                 int(self.arguments[0], 16),
-                bool(self.arguments[1]),
-                bool(self.arguments[2]),
+                yes_to_bool(self.arguments[1]),
+                yes_to_bool(self.arguments[2]),
             ]
         if self.operation == MonitorOperation.PRINT_MEMORY:
             arguments = sorted(int(arg, 16) for arg in self.arguments)
