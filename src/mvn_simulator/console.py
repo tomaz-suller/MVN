@@ -34,11 +34,11 @@ class MonitorConsole(code.InteractiveConsole):
     =======================================================================
                 Escola Politécnica da Universidade de São Paulo
               Computer and Digital Systems Engineering Department
-                   PCS3616 - Systems's Programming
+                        PCS3616 - Systems's Programming
 
-                   MVN - von Neumann Machine Simulator
+                       MVN - von Neumann Machine Simulator
 
-                        All rights reserved
+                               All rights reserved
     =======================================================================
     For available commands, enter `{MonitorOperation.PRINT_HELP.value}`
     """

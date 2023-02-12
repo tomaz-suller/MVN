@@ -92,17 +92,20 @@ class Monitor:
     @staticmethod
     def help() -> None:
         print("""
-               COMMAND      PARAMETERS                 OPERATION
-            ------------------------------------------------------------------
-                  i                          Restart MVN
-                  p     [file]               Load program to memory
-                  r     [addr] [regs] [sbs]  Run program
-                  b                          Activate/Deactivate debug mode
-                  s                          Manage I/O devices
-                  g                          List register content
-                  m     [ini] [end]          List memory content
-                  h                          Help
-                  x                          End MVN and terminal
+            Commands may take arguments, in which case they may all be passed in the
+            same line along with the command, or in subsequent lines.
+
+            Commands:
+                i                   Restart simulator.
+                p <file>            Load program stored in <file>.
+                r <addr>            Execute program from memory address <addr>;
+                  <printregs>       Set <printregs> to 'y' to print register values,
+                  <stepbystep>      and <setpbystep> to pause, after each instruction.
+                s                   Open I/O device menu.
+                g                   Print register contents.
+                m <start> <end>     Print memory content from <start> to <end> address.
+                h                   Print this help menu.
+                x                   Exit.
         """)
 
     def reset(self) -> None:
@@ -177,7 +180,7 @@ class Monitor:
 
     @staticmethod
     def print_register_heading() -> None:
-        print(" MAR  MDR  IC   IR   OP   OI   AC")
+        print(" MAR  MDR  IC   IR   OP   OI   AC ")
         print("---- ---- ---- ---- ---- ---- ----")
 
 # def run_dbg(mvn, goon):
