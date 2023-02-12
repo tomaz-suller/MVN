@@ -104,12 +104,13 @@ class Device:
         self.buffer = []
 
         if self._config.type == DeviceType.DISK:
-            self.filepath = Path(filepath)
+            assert filepath is not None
             assert self._config.mode != DeviceMode.NONE
+            self.filepath = Path(filepath)
             if self._config.mode == DeviceMode.READ:
                 self._read_file_into_buffer()
             elif self._config.mode == DeviceMode.WRITE:
-                self.filepath.unlink()
+                self.filepath.unlink(missing_ok=True)
         elif self._config.type == DeviceType.PRINTER:
             pass
         elif self._config.type == DeviceType.KEYBOARD:
