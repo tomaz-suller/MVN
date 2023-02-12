@@ -38,4 +38,16 @@ class Word:
         return (self.most_significant.value << 8) + self.least_significant.value
 
     def as_ascii(self) -> str:
-        return chr(self.most_significant.value) + chr(self.least_significant.value)
+        most_significant_str = chr(self.most_significant.value)
+        least_significant_str = chr(self.least_significant.value)
+        value = (
+            most_significant_str
+            if most_significant_str.isprintable() or most_significant_str.isspace()
+            else ""
+        )
+        value += (
+            least_significant_str
+            if least_significant_str.isprintable() or least_significant_str.isspace()
+            else ""
+        )
+        return value
