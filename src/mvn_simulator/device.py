@@ -6,9 +6,6 @@ from pathlib import Path
 from .binary import Word
 from .utils import MvnError
 
-MIN_VALUE = 0x0000
-MAX_VALUE = 0xFFFF
-
 
 class DeviceType(IntEnum):
     KEYBOARD = 0
@@ -94,7 +91,7 @@ class Device:
         self,
         in_type: int,
         identifier: int,
-        filepath: Path | None = None,
+        filepath: str | None = None,
         in_mode: str = DeviceMode.NONE,
         printer=None,  # FIXME Deprecated, should be removed completely
         quiet: bool = False,
@@ -105,13 +102,14 @@ class Device:
         self.quiet = quiet
 
         self.buffer = []
-        self.filepath = filepath  # FIXME Remove linter warning
 
         if self._config.type == DeviceType.DISK:
-            assert self.filepath is not None
+            self.filepath = Path(filepath)
             assert self._config.mode != DeviceMode.NONE
             if self._config.mode == DeviceMode.READ:
                 self._read_file_into_buffer()
+            elif self._config.mode == DeviceMode.WRITE:
+                self.filepath.unlink()
         elif self._config.type == DeviceType.PRINTER:
             pass
         elif self._config.type == DeviceType.KEYBOARD:
