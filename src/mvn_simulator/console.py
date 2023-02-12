@@ -1,10 +1,10 @@
 import code
-from codeop import CommandCompiler
 import glob
 import os
 import readline
 import shlex
 import tempfile
+from codeop import CommandCompiler
 
 from .monitor import Monitor, MonitorCode, MonitorOperation
 
@@ -67,7 +67,7 @@ def completer(text: str, state: int) -> str | None:
 
 def path_completer(text: str, state: int) -> str | None:
     try:
-        return [os.path.basename(path) for path in glob.glob(text+"*")][state]
+        return [os.path.basename(path) for path in glob.glob(text + "*")][state]
     except IndexError:
         return None
 
@@ -77,7 +77,7 @@ def operation_completer(_, state: int) -> str | None:
     return options[state]
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import argparse
 
     readline.parse_and_bind("tab: complete")

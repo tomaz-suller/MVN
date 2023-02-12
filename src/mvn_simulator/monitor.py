@@ -1,13 +1,12 @@
+import sys
 from dataclasses import dataclass
 from enum import Enum, unique
 from pathlib import Path
-import sys
 
 from .mvn import Mvn
 from .utils import MvnError
 
-
-COMMENT_DELIMITER = ';'
+COMMENT_DELIMITER = ";"
 
 
 def remove_comment_from_line(line: str) -> str:
@@ -15,20 +14,20 @@ def remove_comment_from_line(line: str) -> str:
 
 
 def yes_to_bool(string: str) -> bool:
-    return string.lower() in ['y', 'yes', 'sim', 's']
+    return string.lower() in ["y", "yes", "sim", "s"]
 
 
 @unique
 class MonitorOperation(str, Enum):
-    RESET_SIMULATOR = 'i'
-    LOAD_PROGRAM = 'p'
-    EXECUTE_PROGRAM = 'r'
+    RESET_SIMULATOR = "i"
+    LOAD_PROGRAM = "p"
+    EXECUTE_PROGRAM = "r"
     # TOGGLE_DEBUG = 'b'
-    CONFIGURE_IO = 's'
-    PRINT_REGISTERS = 'g'
-    PRINT_MEMORY = 'm'
-    PRINT_HELP = 'h'
-    EXIT = 'x'
+    CONFIGURE_IO = "s"
+    PRINT_REGISTERS = "g"
+    PRINT_MEMORY = "m"
+    PRINT_HELP = "h"
+    EXIT = "x"
 
     @property
     def argument_count(self) -> int:
@@ -64,7 +63,7 @@ class MonitorCode:
 # TODO Implement debug mode
 class Monitor:
     simulator: Mvn
-    device_config_path: Path = Path('disp.lst')
+    device_config_path: Path = Path("disp.lst")
     _simulator_args: list
     _should_continue: bool = True
     _program_loaded: bool = False
@@ -97,7 +96,8 @@ class Monitor:
     # function dosctrings directly
     @staticmethod
     def help() -> None:
-        print("""
+        print(
+            """
             Commands may take arguments, in which case they may all be passed in the
             same line along with the command, or in subsequent lines.
 
@@ -112,7 +112,8 @@ class Monitor:
                 m <start> <end>     Print memory content from <start> to <end> address.
                 h                   Print this help menu.
                 x                   Exit.
-        """)
+        """
+        )
 
     def reset(self) -> None:
         # TODO Add reset function to simulator
@@ -122,7 +123,7 @@ class Monitor:
         """Open given file, read it, separate memory and addresses and
         send them to the MVN memory"""
 
-        with open(filepath, encoding='utf8') as f:
+        with open(filepath, encoding="utf8") as f:
             machine_program = [
                 line
                 for line in (
@@ -142,7 +143,9 @@ class Monitor:
         self.simulator.set_memory(machine_program)
         self._program_loaded = True
 
-    def run(self, initial_address: int, print_registers: bool, step_by_step: bool) -> None:
+    def run(
+        self, initial_address: int, print_registers: bool, step_by_step: bool
+    ) -> None:
         if not self._program_loaded:
             raise MvnError("cannot start execution with no loaded program")
         # TODO Refactor simulator to encapsulate initial address config
@@ -173,7 +176,7 @@ class Monitor:
 
     def print_memory(self, begin: int, end: int) -> None:
         dump_filepath = None
-        dump_filepath_str = input('dump filepath (press enter to print to terminal): ')
+        dump_filepath_str = input("dump filepath (press enter to print to terminal): ")
         if dump_filepath_str:
             dump_filepath = Path(dump_filepath_str)
         self.simulator.dump_memory(begin, end, dump_filepath)
@@ -190,6 +193,7 @@ class Monitor:
     def print_register_heading() -> None:
         print(" MAR  MDR  IC   IR   OP   OI   AC ")
         print("---- ---- ---- ---- ---- ---- ----")
+
 
 # def run_dbg(mvn, goon):
 #     """Run the code in debugger mode, in this mode vals and sbs are not
@@ -272,67 +276,67 @@ class Monitor:
 
 # if __name__ == '__main__':
 
-    # Here starts the main code for the MVN's user interface, this will
-    # look like a cmd to the user, but operating the MVN class
+# Here starts the main code for the MVN's user interface, this will
+# look like a cmd to the user, but operating the MVN class
 
-    # First thing to be done is inicialize our MVN
-    # mvn: Mvn = inicialize(time_interrupt, time_limit, timeout, quiet)
-    # This loop will deal with the MVN's interface commands
-    # while True:
-    #     command = input("\n> ")
-    #     command = clean(command)
-    #     # No action to be taken if nothing was typed
-    #     if command:
-    #         switch(command[0])
-    #         # Display the available devices and give options to add or remove
-    #         if case("s"):
-    #             print(c3po("dev_head"))
-    #             mvn.print_devs()
-    #             switch(input(c3po("dev_deal")))
-    #             if case("a"):
-    #                 mvn.show_available_devs()
-    #                 dtype = input(c3po("dev_type"))
-    #                 try:
-    #                     dtype = int(dtype)
-    #                     go = True
-    #                 except:
-    #                     print(c3po("inv_val"))
-    #                     go = False
-    #                 if go:
-    #                     UC = input(c3po("dev_UL"))
-    #                     try:
-    #                         UC = int(UC)
-    #                         go = True
-    #                     except:
-    #                         print(c3po("inv_val"))
-    #                         go = False
-    #                 if go:
-    #                     if dtype == 2:
-    #                         name = input(c3po("print_name"))
-    #                         mvn.new_dev(dtype, UC, printer=name)
-    #                     elif dtype == 3:
-    #                         file = input(c3po("file_name"))
-    #                         met = input(c3po("op_mode"))
-    #                         mvn.new_dev(dtype, UC, file, met)
-    #                     else:
-    #                         mvn.new_dev(dtype, UC)
-    #                     print(c3po("dev_add", (str(dtype), str(UC))))
-    #             elif case("r"):
-    #                 mvn.show_available_devs()
-    #                 dtype = input(c3po("dev_type"))
-    #                 try:
-    #                     dtype = int(dtype)
-    #                     go = True
-    #                 except:
-    #                     print(c3po("inv_val"))
-    #                     go = False
-    #                 if go:
-    #                     UC = input(c3po("dev_UL"))
-    #                     try:
-    #                         UC = int(UC)
-    #                         go = True
-    #                     except:
-    #                         print(c3po("inv_val"))
-    #                         go = False
-    #                 if go:
-    #                     mvn.rm_dev(dtype, UC)
+# First thing to be done is inicialize our MVN
+# mvn: Mvn = inicialize(time_interrupt, time_limit, timeout, quiet)
+# This loop will deal with the MVN's interface commands
+# while True:
+#     command = input("\n> ")
+#     command = clean(command)
+#     # No action to be taken if nothing was typed
+#     if command:
+#         switch(command[0])
+#         # Display the available devices and give options to add or remove
+#         if case("s"):
+#             print(c3po("dev_head"))
+#             mvn.print_devs()
+#             switch(input(c3po("dev_deal")))
+#             if case("a"):
+#                 mvn.show_available_devs()
+#                 dtype = input(c3po("dev_type"))
+#                 try:
+#                     dtype = int(dtype)
+#                     go = True
+#                 except:
+#                     print(c3po("inv_val"))
+#                     go = False
+#                 if go:
+#                     UC = input(c3po("dev_UL"))
+#                     try:
+#                         UC = int(UC)
+#                         go = True
+#                     except:
+#                         print(c3po("inv_val"))
+#                         go = False
+#                 if go:
+#                     if dtype == 2:
+#                         name = input(c3po("print_name"))
+#                         mvn.new_dev(dtype, UC, printer=name)
+#                     elif dtype == 3:
+#                         file = input(c3po("file_name"))
+#                         met = input(c3po("op_mode"))
+#                         mvn.new_dev(dtype, UC, file, met)
+#                     else:
+#                         mvn.new_dev(dtype, UC)
+#                     print(c3po("dev_add", (str(dtype), str(UC))))
+#             elif case("r"):
+#                 mvn.show_available_devs()
+#                 dtype = input(c3po("dev_type"))
+#                 try:
+#                     dtype = int(dtype)
+#                     go = True
+#                 except:
+#                     print(c3po("inv_val"))
+#                     go = False
+#                 if go:
+#                     UC = input(c3po("dev_UL"))
+#                     try:
+#                         UC = int(UC)
+#                         go = True
+#                     except:
+#                         print(c3po("inv_val"))
+#                         go = False
+#                 if go:
+#                     mvn.rm_dev(dtype, UC)
