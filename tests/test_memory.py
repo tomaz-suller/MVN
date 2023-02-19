@@ -1,3 +1,5 @@
+from typing import Dict
+
 import pytest
 
 from mvn_simulator.binary import Word
@@ -8,7 +10,7 @@ from mvn_simulator.utils import MvnError
 # _ is necessary so pytest doesn't detect this as a test class
 class _TestAccess:
     memory: Memory
-    memory_content: dict[int, int]
+    memory_content: Dict[int, int]
     invalid_address: int
 
     def test_initial_value_is_zero(self):

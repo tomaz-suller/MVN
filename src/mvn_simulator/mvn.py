@@ -1,4 +1,5 @@
 import time
+from typing import List
 
 from . import alu, device, memory, register
 from .switchcase import *
@@ -15,7 +16,7 @@ class Mvn:
     remove and show devices
     """
 
-    devs: list[device.Device]
+    devs: List[device.Device]
 
     def __init__(
         self, timeInterrupt=False, time_limit=50, timeout_input=0, quiet=False

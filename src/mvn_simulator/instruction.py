@@ -1,8 +1,9 @@
 from enum import IntEnum, unique
+from typing import Dict
 
 from dotenv import dotenv_values
 
-_CONFIG: dict[str, str] = dotenv_values()
+_CONFIG: Dict[str, str] = dotenv_values()
 
 
 @unique

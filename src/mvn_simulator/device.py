@@ -2,6 +2,7 @@ import signal
 from dataclasses import dataclass
 from enum import Enum, IntEnum
 from pathlib import Path
+from typing import List
 
 from .binary import Word
 from .utils import MvnError
@@ -74,7 +75,7 @@ class Device:
     _config: DeviceConfig
     quiet: bool
     filepath: Path
-    buffer: list[int]
+    buffer: List[int]
 
     # TODO Implement
     # @staticmethod
