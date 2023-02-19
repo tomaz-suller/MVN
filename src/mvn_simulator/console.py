@@ -87,7 +87,8 @@ if __name__ == "__main__":
     try:
         with open(".mvnhistory_filepath", encoding="utf8") as f:
             history_filepath = f.read().strip()
-    except FileNotFoundError:
+            assert os.path.exists(history_filepath)
+    except (FileNotFoundError, AssertionError):
         with tempfile.NamedTemporaryFile(prefix="mvnhistory-", delete=False) as f:
             history_filepath = f.name
         with open(".mvnhistory_filepath", "w", encoding="utf8") as f:
