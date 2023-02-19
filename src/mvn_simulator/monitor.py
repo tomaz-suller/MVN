@@ -173,7 +173,7 @@ class Monitor:
 
     def print_state(self) -> None:
         self.print_register_heading()
-        print(self.simulator.state_str)
+        print(self.simulator.state_str())
 
     def print_memory(self, begin: int, end: int) -> None:
         dump_filepath = None
