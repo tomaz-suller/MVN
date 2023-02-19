@@ -152,9 +152,7 @@ class TestDevice:
             for chars in (string[i : i + 2] for i in range(0, len(string), 2)):
                 display.put_data(TestDevice.encode(chars.encode("ascii")))
             result = stdout.getvalue()
-            # `print` inserts \n which have to be removed
-            result = "".join(result.split("\n"))
-            assert result == string
+            assert result == TEST_STRING
 
         def test_write_on_disk(self, write_disk: Device):
             # Append 0x0 to the end of odd-length strings to make behaviour

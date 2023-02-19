@@ -186,7 +186,7 @@ class Device:
         word = Word(value)
 
         if self._config.type == DeviceType.DISPLAY:
-            print(word.as_ascii())
+            print(word.as_ascii(), end="")
         elif self._config.type == DeviceType.PRINTER:
             pass
         elif self._config.type == DeviceType.DISK:
