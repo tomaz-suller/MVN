@@ -1,7 +1,7 @@
-.vscode
+.*
+!.flake8
 
 ## MVN
-.env
 *.asm
 *.lst
 *.mvn

@@ -169,7 +169,7 @@ class TestDevice:
         def test_error_on_unwritable(self, request, device_name: str):
             device: Device = request.getfixturevalue(device_name)
             with pytest.raises(MvnError, match="Unwritable device"):
-                _ = device.put_data(0x0000)
+                device.put_data(0x0000)
 
 
 # class TestDeviceConfig:
