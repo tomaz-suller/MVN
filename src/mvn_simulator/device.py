@@ -2,7 +2,7 @@ import signal
 from dataclasses import dataclass
 from enum import Enum, IntEnum
 from pathlib import Path
-from typing import List
+from typing import List, Union
 
 from .binary import Word
 from .utils import MvnError
@@ -92,7 +92,7 @@ class Device:
         self,
         in_type: int,
         identifier: int,
-        filepath: str | None = None,
+        filepath: Union[str, None] = None,
         in_mode: str = DeviceMode.NONE,
         printer=None,  # FIXME Deprecated, should be removed completely
         quiet: bool = False,

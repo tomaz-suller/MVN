@@ -5,12 +5,13 @@ import readline
 import shlex
 import tempfile
 from codeop import CommandCompiler
+from typing import Union
 
 from .monitor import Monitor, MonitorCode, MonitorOperation
 
 
 class MonitorCommandCompiler(CommandCompiler):  # pylint: disable=too-few-public-methods
-    def __call__(self, source: str, *args, **kwargs) -> MonitorCode | None:
+    def __call__(self, source: str, *args, **kwargs) -> Union[MonitorCode, None]:
         tokens = shlex.split(source)
         operation_str, arguments = tokens[0], tokens[1:]
         try:
@@ -57,7 +58,7 @@ class MonitorConsole(code.InteractiveConsole):
             self.showtraceback()
 
 
-def completer(text: str, state: int) -> str | None:
+def completer(text: str, state: int) -> Union[str, None]:
     tokens = readline.get_line_buffer().split()
     if tokens:
         partial_path = tokens[-1] if len(tokens) > 1 else ""
@@ -65,14 +66,14 @@ def completer(text: str, state: int) -> str | None:
     return operation_completer(text, state)
 
 
-def path_completer(text: str, state: int) -> str | None:
+def path_completer(text: str, state: int) -> Union[str, None]:
     try:
         return [os.path.basename(path) for path in glob.glob(text + "*")][state]
     except IndexError:
         return None
 
 
-def operation_completer(_, state: int) -> str | None:
+def operation_completer(_, state: int) -> Union[str, None]:
     options = [operation.value for operation in MonitorOperation] + [None]
     return options[state]
 
