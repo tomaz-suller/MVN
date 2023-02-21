@@ -42,6 +42,7 @@ class MonitorConsole(code.InteractiveConsole):
                                All rights reserved
     =======================================================================
     For available commands, enter `{MonitorOperation.PRINT_HELP.value}`
+    or enter `Ctrl-D` to exit
     """
 
     def __init__(self, monitor: Monitor):

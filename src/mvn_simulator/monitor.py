@@ -27,7 +27,6 @@ class MonitorOperation(str, Enum):
     PRINT_REGISTERS = "g"
     PRINT_MEMORY = "m"
     PRINT_HELP = "h"
-    EXIT = "x"
 
     @property
     def argument_count(self) -> int:
@@ -87,7 +86,6 @@ class Monitor:
             MonitorOperation.PRINT_REGISTERS: self.print_state,
             MonitorOperation.PRINT_MEMORY: self.print_memory,
             MonitorOperation.PRINT_HELP: self.help,
-            MonitorOperation.EXIT: self.exit,
         }
         func = function_map[code.operation]
         func(*code.arguments)
@@ -181,10 +179,6 @@ class Monitor:
         if dump_filepath_str:
             dump_filepath = Path(dump_filepath_str)
         self.simulator.dump_memory(begin, end, dump_filepath)
-
-    @staticmethod
-    def exit() -> None:
-        sys.exit()
 
     # TODO Implement
     def add_devices_from_config(self) -> None:
