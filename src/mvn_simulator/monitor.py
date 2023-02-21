@@ -96,21 +96,26 @@ class Monitor:
     def help() -> None:
         print(
             """
-            Commands may take arguments, in which case they may all be passed in the
-            same line along with the command, or in subsequent lines.
+    Commands may take arguments, in which case they may all be passed in the
+    same line along with the command, or in subsequent lines.
 
-            Commands:
-                i                   Restart simulator.
-                p <file>            Load program stored in <file>.
-                r <addr>            Execute program from memory address <addr>;
-                  <printregs>       Set <printregs> to 'y' to print register values,
-                  <stepbystep>      and <setpbystep> to pause, after each instruction.
-                s                   Open I/O device menu.
-                g                   Print register contents.
-                m <start> <end>     Print memory content from <start> to <end> address.
-                h                   Print this help menu.
-                x                   Exit.
-        """
+    Commands:
+        i                       Restart simulator.
+        p <file>                Load program stored in <file>.
+        r <addr> <regs> <step>  Execute program from memory address <addr>;
+                                Set <regs> to 'y' to print register values,
+                                and <step> to pause, after each instruction.
+        s                       Open I/O device menu.
+        g                       Print register contents.
+        m <start> <end>         Print memory content from <start> to <end> address.
+        h                       Print this help menu.
+        UP ARROW                Access previous command from simulator history.
+        TAB                     Apply autocomplete to the current word;
+                                Only completes commands and filepaths.
+        Ctrl-L                  Clear the terminal.
+        Ctrl-C                  Return to simulator prompt.
+        Ctrl-D                  Exit.
+            """
         )
 
     def reset(self) -> None:
